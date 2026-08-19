@@ -12,6 +12,7 @@ class WorkerWorkDay extends Model
         'worker_payroll_week_id',
         'project_id',
         'work_date',
+        'daily_amount',
         'notes',
         'recorded_by',
     ];
@@ -20,6 +21,7 @@ class WorkerWorkDay extends Model
     {
         return [
             'work_date' => 'date',
+            'daily_amount' => 'decimal:2',
         ];
     }
 

@@ -110,6 +110,7 @@ Route::middleware(['auth', 'role:admin|site_manager'])->prefix('construction')->
     Route::post('workers/{worker}/payroll/weeks/{week}/settle', [WorkerPayrollController::class, 'settle'])->name('workers.payroll.settle');
     Route::post('workers/{worker}/payroll/weeks/{week}/reopen', [WorkerPayrollController::class, 'reopen'])->name('workers.payroll.reopen');
     Route::post('workers/{worker}/payroll/work-days', [WorkerPayrollController::class, 'storeWorkDay'])->name('workers.payroll.work-days.store');
+    Route::put('workers/{worker}/payroll/work-days/{workDay}', [WorkerPayrollController::class, 'updateWorkDay'])->name('workers.payroll.work-days.update');
     Route::delete('workers/{worker}/payroll/work-days/{workDay}', [WorkerPayrollController::class, 'destroyWorkDay'])->name('workers.payroll.work-days.destroy');
     Route::resource('workers', WorkerController::class);
 

@@ -138,6 +138,19 @@ class WorkerPayrollController extends Controller
         return $this->backToWeek($worker, $day->work_date)->with('success', 'Work day added.');
     }
 
+    public function updateWorkDay(WorkerWorkDayRequest $request, Worker $worker, WorkerWorkDay $workDay): RedirectResponse
+    {
+        abort_unless($workDay->worker_id === $worker->id, 404);
+
+        try {
+            $this->payroll->updateWorkDay($workDay, $request->validated());
+        } catch (RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage())->withInput();
+        }
+
+        return $this->backToWeek($worker, $workDay->work_date)->with('success', 'Work day updated.');
+    }
+
     public function destroyWorkDay(Request $request, Worker $worker, WorkerWorkDay $workDay): RedirectResponse
     {
         $this->authorize('recordWork', $worker);

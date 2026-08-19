@@ -222,6 +222,138 @@ class WorkerPayrollTest extends TestCase
         );
     }
 
+    /**
+     * The day salaries entered on the work sheet add up to the week's salary.
+     */
+    public function test_day_salaries_on_the_work_sheet_add_up_to_the_weekly_salary(): void
+    {
+        [, $site] = $this->seedRoles();
+        $worker = $this->worker(weeklySalary: 10000);
+        $payroll = app(WorkerPayrollService::class);
+
+        $monday = $this->wednesday()->startOfWeek(Carbon::SUNDAY)->addDay();
+
+        foreach ([1800, 1800, 2200] as $index => $amount) {
+            $payroll->recordWorkDay($worker, [
+                'work_date' => $monday->copy()->addDays($index)->toDateString(),
+                'daily_amount' => $amount,
+            ], $site->id);
+        }
+
+        $week = $payroll->weekFor($worker, $this->wednesday())->load(['workDays', 'payments']);
+
+        $this->assertSame(5800.0, $week->sheetTotal());
+        $this->assertSame(5800.0, (float) $week->weekly_salary);
+        $this->assertTrue($week->salaryFromSheet());
+        $this->assertSame(5800.0, $week->remainingSalary());
+    }
+
+    public function test_changing_a_day_salary_updates_the_weekly_total(): void
+    {
+        [, $site] = $this->seedRoles();
+        $worker = $this->worker(weeklySalary: 10000);
+        $payroll = app(WorkerPayrollService::class);
+
+        $day = $payroll->recordWorkDay($worker, [
+            'work_date' => $this->wednesday()->toDateString(),
+            'daily_amount' => 2000,
+        ], $site->id);
+
+        $week = $payroll->weekFor($worker, $this->wednesday());
+        $this->assertSame(2000.0, (float) $week->fresh()->weekly_salary);
+
+        $payroll->updateWorkDay($day, ['daily_amount' => 2500]);
+        $this->assertSame(2500.0, (float) $week->fresh()->weekly_salary);
+
+        $payroll->removeWorkDay($day->fresh());
+
+        // Sheet empty again, so the agreed weekly figure applies.
+        $this->assertSame(10000.0, (float) $week->fresh()->weekly_salary);
+    }
+
+    public function test_a_day_without_an_amount_leaves_the_agreed_weekly_salary_in_place(): void
+    {
+        [, $site] = $this->seedRoles();
+        $worker = $this->worker(weeklySalary: 10000);
+        $payroll = app(WorkerPayrollService::class);
+
+        $payroll->recordWorkDay($worker, ['work_date' => $this->wednesday()->toDateString()], $site->id);
+
+        $week = $payroll->weekFor($worker, $this->wednesday())->load(['workDays', 'payments']);
+
+        $this->assertSame(0.0, $week->sheetTotal());
+        $this->assertFalse($week->salaryFromSheet());
+        $this->assertSame(10000.0, (float) $week->weekly_salary);
+    }
+
+    public function test_the_work_sheet_cannot_total_less_than_what_was_already_paid(): void
+    {
+        [$admin, $site] = $this->seedRoles();
+        $worker = $this->worker(weeklySalary: 10000);
+        $payroll = app(WorkerPayrollService::class);
+
+        $payroll->recordAdvance($worker, [
+            'amount' => 6000,
+            'payment_date' => $this->wednesday(),
+            'deduct_from_week' => true,
+        ], $admin->id);
+
+        $this->expectException(RuntimeException::class);
+
+        $payroll->recordWorkDay($worker, [
+            'work_date' => $this->wednesday()->toDateString(),
+            'daily_amount' => 2000,
+        ], $site->id);
+    }
+
+    public function test_admin_can_enter_a_day_salary_through_the_work_sheet_form(): void
+    {
+        [$admin] = $this->seedRoles();
+        $worker = $this->worker(weeklySalary: 10000);
+
+        $this->actingAs($admin)
+            ->post(route('construction.workers.payroll.work-days.store', $worker), [
+                'work_date' => $this->wednesday()->toDateString(),
+                'daily_amount' => 2400,
+                'notes' => 'Plastering',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('worker_work_days', [
+            'worker_id' => $worker->id,
+            'daily_amount' => 2400,
+            'notes' => 'Plastering',
+        ]);
+
+        $this->assertDatabaseHas('worker_payroll_weeks', [
+            'worker_id' => $worker->id,
+            'weekly_salary' => 2400,
+        ]);
+    }
+
+    public function test_site_manager_can_correct_a_day_salary(): void
+    {
+        [, $site] = $this->seedRoles();
+        $worker = $this->worker(weeklySalary: 10000);
+
+        $day = app(WorkerPayrollService::class)->recordWorkDay($worker, [
+            'work_date' => $this->wednesday()->toDateString(),
+            'daily_amount' => 2000,
+        ], $site->id);
+
+        $this->actingAs($site)
+            ->put(route('construction.workers.payroll.work-days.update', ['worker' => $worker, 'workDay' => $day]), [
+                'daily_amount' => 3200,
+                'notes' => 'Extra hours',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame(3200.0, (float) $day->fresh()->daily_amount);
+        $this->assertSame(3200.0, (float) $day->week->fresh()->weekly_salary);
+    }
+
     public function test_the_same_day_cannot_be_recorded_twice(): void
     {
         [, $site] = $this->seedRoles();
@@ -290,10 +422,17 @@ class WorkerPayrollTest extends TestCase
 
         // Left open on purpose: the advance and settlement forms only show
         // while the week is still open.
-        app(WorkerPayrollService::class)->recordAdvance($worker, [
+        $payroll = app(WorkerPayrollService::class);
+
+        $payroll->recordAdvance($worker, [
             'amount' => 3000,
             'payment_date' => $this->wednesday(),
             'deduct_from_week' => false,
+        ], $admin->id);
+
+        $payroll->recordWorkDay($worker, [
+            'work_date' => $this->wednesday()->toDateString(),
+            'daily_amount' => 2500,
         ], $admin->id);
 
         $this->actingAs($admin)
@@ -302,6 +441,9 @@ class WorkerPayrollTest extends TestCase
             ->assertSee('Weekly salary')
             ->assertSee('Worker debt')
             ->assertSee('Work sheet')
+            ->assertSee('Day salary (Rs.)')
+            ->assertSee('Total from work sheet')
+            ->assertSee('Added up from 1 day on the work sheet')
             ->assertSee('Deduct from current week salary?')
             ->assertSee('Added to worker debt')
             ->assertSee('Recover debt now (Rs.)');

@@ -96,6 +96,32 @@ class WorkerPayrollWeek extends Model
     }
 
     /**
+     * The day salaries entered on this week's work sheet, added up.
+     */
+    public function sheetTotal(): float
+    {
+        return round((float) $this->workDays->sum('daily_amount'), 2);
+    }
+
+    /**
+     * True when the weekly salary came from the work sheet rather than from the
+     * worker's agreed weekly figure.
+     */
+    public function salaryFromSheet(): bool
+    {
+        return $this->sheetTotal() > 0;
+    }
+
+    /**
+     * Salary already committed: paid out, or promised to debt recovery. The
+     * weekly salary can never be dropped below this.
+     */
+    public function committedSalary(): float
+    {
+        return round($this->advancesDeducted() + $this->settlementsPaid() + (float) $this->debt_deducted, 2);
+    }
+
+    /**
      * What the worker is owed on Saturday, after this week's deductible
      * advances and any old debt being recovered.
      */

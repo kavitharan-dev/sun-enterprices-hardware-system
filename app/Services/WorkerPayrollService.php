@@ -232,39 +232,96 @@ class WorkerPayrollService
      */
     public function recordWorkDay(Worker $worker, array $data, ?int $userId = null): WorkerWorkDay
     {
-        $date = Carbon::parse($data['work_date']);
-        $week = $this->weekFor($worker, $date, $userId);
+        return DB::transaction(function () use ($worker, $data, $userId) {
+            $date = Carbon::parse($data['work_date']);
+            $week = $this->weekFor($worker, $date, $userId);
 
-        if ($week->isSettled()) {
-            throw new RuntimeException('This week is already settled, so its work sheet cannot change.');
-        }
+            $this->guardOpenSheet($week);
 
-        $exists = WorkerWorkDay::query()
-            ->where('worker_id', $worker->id)
-            ->whereDate('work_date', $date)
-            ->exists();
+            $exists = WorkerWorkDay::query()
+                ->where('worker_id', $worker->id)
+                ->whereDate('work_date', $date)
+                ->exists();
 
-        if ($exists) {
-            throw new RuntimeException('This day is already on the work sheet.');
-        }
+            if ($exists) {
+                throw new RuntimeException('This day is already on the work sheet.');
+            }
 
-        return WorkerWorkDay::query()->create([
-            'worker_id' => $worker->id,
-            'worker_payroll_week_id' => $week->id,
-            'project_id' => $data['project_id'] ?? null,
-            'work_date' => $date->toDateString(),
-            'notes' => $data['notes'] ?? null,
-            'recorded_by' => $userId,
-        ]);
+            $day = WorkerWorkDay::query()->create([
+                'worker_id' => $worker->id,
+                'worker_payroll_week_id' => $week->id,
+                'project_id' => $data['project_id'] ?? null,
+                'work_date' => $date->toDateString(),
+                'daily_amount' => round((float) ($data['daily_amount'] ?? 0), 2),
+                'notes' => $data['notes'] ?? null,
+                'recorded_by' => $userId,
+            ]);
+
+            $this->syncWeeklySalary($week);
+
+            return $day;
+        });
+    }
+
+    public function updateWorkDay(WorkerWorkDay $day, array $data): WorkerWorkDay
+    {
+        return DB::transaction(function () use ($day, $data) {
+            $week = $day->week;
+            $this->guardOpenSheet($week);
+
+            $day->update([
+                'project_id' => $data['project_id'] ?? null,
+                'daily_amount' => round((float) ($data['daily_amount'] ?? 0), 2),
+                'notes' => $data['notes'] ?? null,
+            ]);
+
+            $this->syncWeeklySalary($week);
+
+            return $day->fresh();
+        });
     }
 
     public function removeWorkDay(WorkerWorkDay $day): void
     {
-        if ($day->week?->isSettled()) {
-            throw new RuntimeException('This week is already settled, so its work sheet cannot change.');
+        DB::transaction(function () use ($day) {
+            $week = $day->week;
+            $this->guardOpenSheet($week);
+
+            $day->delete();
+            $this->syncWeeklySalary($week);
+        });
+    }
+
+    /**
+     * The work sheet decides the week's salary: the day salaries added up. With
+     * no day salaries entered it falls back to the worker's agreed weekly
+     * figure, so a week can still be paid without filling the sheet in.
+     */
+    private function syncWeeklySalary(WorkerPayrollWeek $week): void
+    {
+        $week->load(['workDays', 'payments', 'worker']);
+
+        $salary = $week->salaryFromSheet()
+            ? $week->sheetTotal()
+            : round((float) $week->worker->weekly_salary, 2);
+
+        $committed = $week->committedSalary();
+
+        if ($salary < $committed) {
+            throw new RuntimeException(
+                'Rs. '.number_format($committed, 2).' of this week has already been paid or set against debt, '
+                .'so the work sheet cannot total less than that. Reverse the payment first.',
+            );
         }
 
-        $day->delete();
+        $week->update(['weekly_salary' => $salary]);
+    }
+
+    private function guardOpenSheet(?WorkerPayrollWeek $week): void
+    {
+        if ($week?->isSettled()) {
+            throw new RuntimeException('This week is already settled, so its work sheet cannot change.');
+        }
     }
 
     /**

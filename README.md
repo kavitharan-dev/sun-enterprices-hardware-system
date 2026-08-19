@@ -148,7 +148,8 @@ never run that seeder on a live database.
 
 Paid every Saturday. Each worker has a weekly salary; the pay week runs Sunday to Saturday.
 
-- Work sheet per week: date, day, and the project/site the worker was on
+- Work sheet per week: date, day, project/site, day salary, and notes
+- Day salaries entered on the sheet add up to that week's salary; with none entered the worker's agreed weekly figure applies
 - Money given before Saturday is an **advance**, recorded with one choice:
   - **Deduct from current week** — the Saturday payout drops by that amount
   - **Do not deduct** — the worker still gets the full salary and the amount becomes **worker debt**

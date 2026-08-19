@@ -25,6 +25,13 @@
             <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase text-slate-500">Weekly salary</p>
                 <p class="mt-1 text-2xl font-semibold text-slate-800">Rs. {{ number_format((float) $week->weekly_salary, 2) }}</p>
+                <p class="mt-1 text-xs text-slate-500">
+                    @if ($week->salaryFromSheet())
+                        Added up from {{ $week->workDays->count() }} {{ \Illuminate\Support\Str::plural('day', $week->workDays->count()) }} on the work sheet
+                    @else
+                        Agreed weekly figure — enter day salaries below to build it up
+                    @endif
+                </p>
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase text-slate-500">Total paid this week</p>
@@ -46,7 +53,10 @@
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <p class="font-semibold text-slate-800">How this week adds up</p>
             <div class="mt-3 max-w-md space-y-1 text-sm">
-                <div class="flex justify-between"><span class="text-slate-500">Weekly salary</span><span>Rs. {{ number_format((float) $week->weekly_salary, 2) }}</span></div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Weekly salary{{ $week->salaryFromSheet() ? ' (work sheet total)' : '' }}</span>
+                    <span>Rs. {{ number_format((float) $week->weekly_salary, 2) }}</span>
+                </div>
                 <div class="flex justify-between"><span class="text-slate-500">Less advances deducted from this week</span><span class="text-rose-700">− Rs. {{ number_format($advancesDeducted, 2) }}</span></div>
                 <div class="flex justify-between"><span class="text-slate-500">Less old debt recovered</span><span class="text-rose-700">− Rs. {{ number_format((float) $week->debt_deducted, 2) }}</span></div>
                 <div class="flex justify-between border-t pt-1 font-semibold"><span>Payable on Saturday</span><span>Rs. {{ number_format($week->netPayable(), 2) }}</span></div>
@@ -61,53 +71,106 @@
         </div>
 
         <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div class="flex items-center justify-between border-b px-5 py-3">
-                <p class="font-semibold text-slate-800">Work sheet</p>
-                <p class="text-sm text-slate-500">{{ $week->workDays->count() }} {{ \Illuminate\Support\Str::plural('day', $week->workDays->count()) }} worked</p>
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b px-5 py-3">
+                <div>
+                    <p class="font-semibold text-slate-800">Work sheet</p>
+                    <p class="text-xs text-slate-500">Enter what each day is worth. The days add up to this week's salary.</p>
+                </div>
+                <p class="text-sm text-slate-500">{{ $week->workDays->count() }} {{ \Illuminate\Support\Str::plural('day', $week->workDays->count()) }} · Rs. {{ number_format($week->sheetTotal(), 2) }}</p>
             </div>
-            <table class="min-w-full text-sm">
-                <thead class="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
-                    <tr>
-                        <th class="px-4 py-2">Date</th>
-                        <th class="px-4 py-2">Day</th>
-                        <th class="px-4 py-2">Project / Site</th>
-                        <th class="px-4 py-2">Notes</th>
-                        <th class="px-4 py-2"></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y">
-                    @forelse ($week->workDays as $day)
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
                         <tr>
-                            <td class="px-4 py-3">{{ $day->work_date->format('d/m/Y') }}</td>
-                            <td class="px-4 py-3">{{ $day->dayName() }}</td>
-                            <td class="px-4 py-3">
-                                @if ($day->project)
-                                    <a href="{{ route('construction.projects.show', $day->project) }}" class="font-medium text-amber-700">{{ $day->project->name }}</a>
-                                @else
-                                    <span class="text-slate-400">{{ $day->siteName() }}</span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 text-slate-500">{{ $day->notes ?? '—' }}</td>
-                            <td class="px-4 py-3 text-right">
-                                @can('recordWork', $worker)
-                                    @unless ($week->isSettled())
-                                        <form method="POST" action="{{ route('construction.workers.payroll.work-days.destroy', ['worker' => $worker, 'workDay' => $day]) }}" onsubmit="return confirm('Remove this day from the sheet?')">
-                                            @csrf @method('DELETE')
-                                            <button class="text-xs font-semibold text-rose-600">Remove</button>
-                                        </form>
-                                    @endunless
-                                @endcan
-                            </td>
+                            <th class="px-4 py-2">Date</th>
+                            <th class="px-4 py-2">Day</th>
+                            <th class="px-4 py-2">Project / Site</th>
+                            <th class="px-4 py-2">Day salary (Rs.)</th>
+                            <th class="px-4 py-2">Notes</th>
+                            <th class="px-4 py-2"></th>
                         </tr>
-                    @empty
-                        <tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">No days recorded for this week yet.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="divide-y">
+                        @forelse ($week->workDays as $day)
+                            @php($editable = ! $week->isSettled() && auth()->user()->can('recordWork', $worker))
+                            <tr>
+                                <td class="whitespace-nowrap px-4 py-3">{{ $day->work_date->format('d/m/Y') }}</td>
+                                <td class="whitespace-nowrap px-4 py-3">{{ $day->dayName() }}</td>
+                                <td class="px-4 py-3">
+                                    @if ($editable)
+                                        <select name="project_id" form="day-{{ $day->id }}" class="w-44 rounded-md border-gray-300 text-sm">
+                                            <option value="">Not on a site</option>
+                                            @foreach ($projects as $project)
+                                                <option value="{{ $project->id }}" @selected($day->project_id == $project->id)>{{ $project->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    @elseif ($day->project)
+                                        <a href="{{ route('construction.projects.show', $day->project) }}" class="font-medium text-amber-700">{{ $day->project->name }}</a>
+                                    @else
+                                        <span class="text-slate-400">{{ $day->siteName() }}</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3">
+                                    @if ($editable)
+                                        <input type="number" name="daily_amount" form="day-{{ $day->id }}" step="0.01" min="0"
+                                            value="{{ number_format((float) $day->daily_amount, 2, '.', '') }}"
+                                            class="w-28 rounded-md border-gray-300 text-sm text-right">
+                                    @else
+                                        <span class="font-semibold">Rs. {{ number_format((float) $day->daily_amount, 2) }}</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3">
+                                    @if ($editable)
+                                        <input type="text" name="notes" form="day-{{ $day->id }}" value="{{ $day->notes }}" maxlength="255"
+                                            class="w-40 rounded-md border-gray-300 text-sm" placeholder="Optional">
+                                    @else
+                                        <span class="text-slate-500">{{ $day->notes ?? '—' }}</span>
+                                    @endif
+                                </td>
+                                <td class="whitespace-nowrap px-4 py-3 text-right">
+                                    @if ($editable)
+                                        <div class="flex items-center justify-end gap-3">
+                                            <button form="day-{{ $day->id }}" class="text-xs font-semibold text-emerald-700">Save</button>
+                                            <button form="remove-day-{{ $day->id }}" class="text-xs font-semibold text-rose-600">Remove</button>
+                                        </div>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">No days recorded for this week yet.</td></tr>
+                        @endforelse
+                    </tbody>
+                    @if ($week->workDays->isNotEmpty())
+                        <tfoot class="border-t bg-slate-50 text-sm font-semibold">
+                            <tr>
+                                <td class="px-4 py-3" colspan="3">Total from work sheet</td>
+                                <td class="px-4 py-3">Rs. {{ number_format($week->sheetTotal(), 2) }}</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    @endif
+                </table>
+            </div>
+
+            {{-- The row inputs above post through these, since a form cannot live inside a table row. --}}
+            @can('recordWork', $worker)
+                @unless ($week->isSettled())
+                    <div class="hidden">
+                        @foreach ($week->workDays as $day)
+                            <form method="POST" id="day-{{ $day->id }}" action="{{ route('construction.workers.payroll.work-days.update', ['worker' => $worker, 'workDay' => $day]) }}">
+                                @csrf @method('PUT')
+                            </form>
+                            <form method="POST" id="remove-day-{{ $day->id }}" action="{{ route('construction.workers.payroll.work-days.destroy', ['worker' => $worker, 'workDay' => $day]) }}" onsubmit="return confirm('Remove this day from the sheet?')">
+                                @csrf @method('DELETE')
+                            </form>
+                        @endforeach
+                    </div>
+                @endunless
+            @endcan
 
             @can('recordWork', $worker)
                 @unless ($week->isSettled())
-                    <form method="POST" action="{{ route('construction.workers.payroll.work-days.store', $worker) }}" class="grid gap-3 border-t bg-slate-50 p-4 sm:grid-cols-4">
+                    <form method="POST" action="{{ route('construction.workers.payroll.work-days.store', $worker) }}" class="grid gap-3 border-t bg-slate-50 p-4 sm:grid-cols-5">
                         @csrf
                         <div>
                             <x-input-label for="work_date" value="Date" />
@@ -123,6 +186,11 @@
                                     <option value="{{ $project->id }}" @selected(old('project_id') == $project->id)>{{ $project->name }}</option>
                                 @endforeach
                             </select>
+                        </div>
+                        <div>
+                            <x-input-label for="daily_amount" value="Day salary (Rs.)" />
+                            <x-text-input id="daily_amount" name="daily_amount" type="number" step="0.01" min="0" class="mt-1 block w-full"
+                                :value="old('daily_amount', number_format((float) $worker->daily_rate, 2, '.', ''))" />
                         </div>
                         <div>
                             <x-input-label for="work_day_notes" value="Notes" />
