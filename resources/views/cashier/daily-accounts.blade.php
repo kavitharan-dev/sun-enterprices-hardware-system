@@ -1,0 +1,251 @@
+<x-app-layout>
+    <x-slot name="header">
+        <div>
+            <h2 class="text-xl font-semibold text-slate-800">Daily accounts</h2>
+            <p class="text-sm text-slate-500">Central cash book for the shop and every project. Opening + income − expenses = closing. Project budgets stay on the project page.</p>
+        </div>
+    </x-slot>
+
+    @php
+        $from = $filters['from'];
+        $to = $filters['to'];
+    @endphp
+
+    <div class="space-y-6">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-xs uppercase text-slate-500">Opening balance</p>
+                <p class="mt-1 text-2xl font-semibold text-slate-800">Rs. {{ number_format($totals['opening'], 2) }}</p>
+                <p class="mt-1 text-xs text-slate-500">{{ \Illuminate\Support\Carbon::parse($from)->format('d/m/Y') }}</p>
+            </div>
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
+                <p class="text-xs uppercase text-emerald-700">Total income</p>
+                <p class="mt-1 text-2xl font-semibold text-emerald-800">Rs. {{ number_format($onlyDate ? $totals['income'] : $filteredIncome, 2) }}</p>
+            </div>
+            <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 shadow-sm">
+                <p class="text-xs uppercase text-rose-600">Total expenses</p>
+                <p class="mt-1 text-2xl font-semibold text-rose-700">Rs. {{ number_format($onlyDate ? $totals['expense'] : $filteredExpense, 2) }}</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-xs uppercase text-slate-500">Closing balance</p>
+                <p class="mt-1 text-2xl font-semibold {{ $totals['closing'] < 0 ? 'text-rose-700' : 'text-slate-800' }}">Rs. {{ number_format($onlyDate ? $totals['closing'] : ($totals['opening'] + $filteredIncome - $filteredExpense), 2) }}</p>
+                <p class="mt-1 text-xs text-slate-500">Opening + income − expenses</p>
+            </div>
+        </div>
+
+        <form method="GET" class="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+                <x-input-label for="from" value="From" />
+                <x-text-input id="from" name="from" type="date" class="mt-1 block w-full" :value="$from" />
+            </div>
+            <div>
+                <x-input-label for="to" value="To" />
+                <x-text-input id="to" name="to" type="date" class="mt-1 block w-full" :value="$to" />
+            </div>
+            <div>
+                <x-input-label for="project_id" value="Project" />
+                <select id="project_id" name="project_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                    <option value="">All projects</option>
+                    @foreach ($projects as $project)
+                        <option value="{{ $project->id }}" @selected((string) $filters['project_id'] === (string) $project->id)>{{ $project->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <x-input-label for="worker_id" value="Worker" />
+                <select id="worker_id" name="worker_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                    <option value="">All workers</option>
+                    @foreach ($workers as $worker)
+                        <option value="{{ $worker->id }}" @selected((string) $filters['worker_id'] === (string) $worker->id)>{{ $worker->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <x-input-label for="type" value="Transaction type" />
+                <select id="type" name="type" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                    <option value="">All types</option>
+                    @foreach ($types as $type)
+                        <option value="{{ $type->value }}" @selected($filters['type'] === $type->value)>{{ $type->label() }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <x-input-label for="category" value="Category" />
+                <select id="category" name="category" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                    <option value="">All categories</option>
+                    @foreach ($categories as $category)
+                        <option value="{{ $category->value }}" @selected($filters['category'] === $category->value)>{{ $category->label() }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <x-input-label for="direction" value="Income / Expense" />
+                <select id="direction" name="direction" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                    <option value="">Both</option>
+                    <option value="income" @selected($filters['direction'] === 'income')>Income</option>
+                    <option value="expense" @selected($filters['direction'] === 'expense')>Expense</option>
+                </select>
+            </div>
+            <div>
+                <x-input-label for="method" value="Payment method" />
+                <select id="method" name="method" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                    <option value="">All methods</option>
+                    @foreach ($methods as $method)
+                        <option value="{{ $method->value }}" @selected($filters['method'] === $method->value)>{{ $method->label() }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="flex items-end gap-2 lg:col-span-4">
+                <x-primary-button>Filter</x-primary-button>
+                <a href="{{ route('cashier.daily-accounts.index') }}" class="btn btn-secondary">Today</a>
+            </div>
+        </form>
+
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+                        <tr>
+                            <th class="px-3 py-2">Date</th>
+                            <th class="px-3 py-2">Transaction type</th>
+                            <th class="px-3 py-2">Category</th>
+                            <th class="px-3 py-2">Description</th>
+                            <th class="px-3 py-2">Project</th>
+                            <th class="px-3 py-2">Worker</th>
+                            <th class="px-3 py-2">Reference</th>
+                            <th class="px-3 py-2 text-right">Income</th>
+                            <th class="px-3 py-2 text-right">Expense</th>
+                            <th class="px-3 py-2 text-right">Balance</th>
+                            <th class="px-3 py-2"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        @if ($onlyDate)
+                            <tr class="bg-slate-50">
+                                <td class="px-3 py-2 text-slate-500" colspan="7">Opening balance</td>
+                                <td class="px-3 py-2 text-right text-slate-400">—</td>
+                                <td class="px-3 py-2 text-right text-slate-400">—</td>
+                                <td class="px-3 py-2 text-right font-semibold">Rs. {{ number_format($totals['opening'], 2) }}</td>
+                                <td></td>
+                            </tr>
+                        @endif
+                        @forelse ($rows as $row)
+                            @php $entry = $row['entry']; @endphp
+                            <tr>
+                                <td class="whitespace-nowrap px-3 py-2">{{ $entry->occurred_on->format('d/m/Y') }}</td>
+                                <td class="px-3 py-2">{{ $entry->type->label() }}</td>
+                                <td class="px-3 py-2">{{ $entry->category->label() }}</td>
+                                <td class="px-3 py-2">{{ $entry->description }}</td>
+                                <td class="px-3 py-2">{{ $entry->project?->name ?? '—' }}</td>
+                                <td class="px-3 py-2">{{ $entry->worker?->name ?? '—' }}</td>
+                                <td class="px-3 py-2 text-slate-500">{{ $entry->reference_no ?: ($entry->method?->label() ?? '—') }}</td>
+                                <td class="px-3 py-2 text-right text-emerald-700">{{ (float) $entry->income > 0 ? 'Rs. '.number_format((float) $entry->income, 2) : '—' }}</td>
+                                <td class="px-3 py-2 text-right text-rose-700">{{ (float) $entry->expense > 0 ? 'Rs. '.number_format((float) $entry->expense, 2) : '—' }}</td>
+                                <td class="px-3 py-2 text-right font-semibold">Rs. {{ number_format($row['balance'], 2) }}</td>
+                                <td class="px-3 py-2 text-right">
+                                    @if ($entry->is_manual)
+                                        <form method="POST" action="{{ route('cashier.daily-accounts.destroy', $entry) }}" onsubmit="return confirm('Remove this manual entry?')">
+                                            @csrf @method('DELETE')
+                                            <button class="text-xs font-semibold text-rose-600">Remove</button>
+                                        </form>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="11" class="px-3 py-8 text-center text-slate-500">No transactions for these filters.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="grid gap-6 lg:grid-cols-2">
+            <form method="POST" action="{{ route('cashier.daily-accounts.opening') }}" class="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                @csrf @method('PUT')
+                <div>
+                    <p class="font-semibold text-slate-800">Opening balance</p>
+                    <p class="mt-1 text-sm text-slate-500">Set the till at the start of the day. Yesterday’s closing is used until you change it.</p>
+                </div>
+                <input type="hidden" name="business_date" value="{{ $from }}">
+                <div>
+                    <x-input-label for="opening_balance" value="Opening (Rs.)" />
+                    <x-text-input id="opening_balance" name="opening_balance" type="number" step="0.01" class="mt-1 block w-full" :value="old('opening_balance', number_format((float) $day->opening_balance, 2, '.', ''))" required />
+                </div>
+                <div>
+                    <x-input-label for="opening_notes" value="Notes" />
+                    <x-text-input id="opening_notes" name="notes" class="mt-1 block w-full" :value="old('notes', $day->notes)" placeholder="Optional" />
+                </div>
+                <x-primary-button>Save opening</x-primary-button>
+            </form>
+
+            <form method="POST" action="{{ route('cashier.daily-accounts.store') }}" class="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                @csrf
+                <div>
+                    <p class="font-semibold text-slate-800">Other income or expense</p>
+                    <p class="mt-1 text-sm text-slate-500">Use this only when the money did not come from sales, purchases, wages, or a project page. Those post here automatically.</p>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div>
+                        <x-input-label for="occurred_on" value="Date" />
+                        <x-text-input id="occurred_on" name="occurred_on" type="date" class="mt-1 block w-full" :value="old('occurred_on', $from)" required />
+                    </div>
+                    <div>
+                        <x-input-label for="manual_amount" value="Amount (Rs.)" />
+                        <x-text-input id="manual_amount" name="amount" type="number" step="0.01" min="0.01" class="mt-1 block w-full" :value="old('amount')" required />
+                    </div>
+                    <div>
+                        <x-input-label for="manual_type" value="Type" />
+                        <select id="manual_type" name="type" class="mt-1 block w-full rounded-md border-gray-300 text-sm" required>
+                            <option value="other_income" @selected(old('type') === 'other_income')>Other income</option>
+                            <option value="other_expense" @selected(old('type', 'other_expense') === 'other_expense')>Other expense</option>
+                        </select>
+                    </div>
+                    <div>
+                        <x-input-label for="manual_category" value="Category" />
+                        <select id="manual_category" name="category" class="mt-1 block w-full rounded-md border-gray-300 text-sm" required>
+                            <option value="other_income">Other income</option>
+                            <option value="other">Other</option>
+                            <option value="transport">Transport</option>
+                            <option value="labour">Labour</option>
+                        </select>
+                    </div>
+                    <div>
+                        <x-input-label for="manual_method" value="Method" />
+                        <select id="manual_method" name="method" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                            @foreach ($methods as $method)
+                                <option value="{{ $method->value }}">{{ $method->label() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <x-input-label for="manual_reference" value="Reference" />
+                        <x-text-input id="manual_reference" name="reference_no" class="mt-1 block w-full" :value="old('reference_no')" placeholder="Slip / voucher" />
+                    </div>
+                    <div class="sm:col-span-2">
+                        <x-input-label for="manual_description" value="Description" />
+                        <x-text-input id="manual_description" name="description" class="mt-1 block w-full" :value="old('description')" required />
+                    </div>
+                    <div>
+                        <x-input-label for="manual_project" value="Project (optional)" />
+                        <select id="manual_project" name="project_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                            <option value="">—</option>
+                            @foreach ($projects as $project)
+                                <option value="{{ $project->id }}">{{ $project->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <x-input-label for="manual_worker" value="Worker (optional)" />
+                        <select id="manual_worker" name="worker_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                            <option value="">—</option>
+                            @foreach ($workers as $worker)
+                                <option value="{{ $worker->id }}">{{ $worker->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <x-primary-button>Add to daily accounts</x-primary-button>
+            </form>
+        </div>
+    </div>
+</x-app-layout>

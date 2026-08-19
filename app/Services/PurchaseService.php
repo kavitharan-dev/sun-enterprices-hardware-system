@@ -17,6 +17,7 @@ class PurchaseService
     public function __construct(
         private readonly StockService $stockService,
         private readonly DocumentNumberService $documentNumbers,
+        private readonly DailyAccountService $dailyAccounts,
     ) {}
 
     public function create(array $data, array $items, int $userId): Purchase
@@ -117,6 +118,8 @@ class PurchaseService
                 'status' => PurchaseStatus::Completed,
                 'completed_at' => now(),
             ]);
+
+            $this->dailyAccounts->postPurchase($purchase->fresh('supplier'), $userId ?? auth()->id());
 
             $this->logActivity(
                 'completed',

@@ -26,6 +26,8 @@ class WorkerPayrollService
 
     public const WEEK_START = CarbonInterface::SUNDAY;
 
+    public function __construct(private readonly DailyAccountService $dailyAccounts) {}
+
     public function weekStartFor(string|Carbon $date): Carbon
     {
         return Carbon::parse($date)->startOfWeek(self::WEEK_START);
@@ -107,6 +109,8 @@ class WorkerPayrollService
                 'recorded_by' => $userId,
             ]);
 
+            $this->dailyAccounts->postWorkerPayment($payment->load(['worker', 'week']));
+
             $this->logActivity(
                 'advance',
                 'WorkerPayment',
@@ -166,7 +170,7 @@ class WorkerPayrollService
             }
 
             if ($payout > 0) {
-                WorkerPayment::query()->create([
+                $settlement = WorkerPayment::query()->create([
                     'worker_id' => $worker->id,
                     'worker_payroll_week_id' => $week->id,
                     'project_id' => $data['project_id'] ?? null,
@@ -177,6 +181,8 @@ class WorkerPayrollService
                     'notes' => $data['notes'] ?? null,
                     'recorded_by' => $userId,
                 ]);
+
+                $this->dailyAccounts->postWorkerPayment($settlement->load(['worker', 'week']));
             }
 
             $week->update([

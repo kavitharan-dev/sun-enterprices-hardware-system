@@ -6,7 +6,6 @@ use App\Enums\MovementType;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\SaleStatus;
-use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Sale;
@@ -22,6 +21,7 @@ class SaleService
         private readonly StockService $stockService,
         private readonly DocumentNumberService $documentNumbers,
         private readonly NotificationService $notifications,
+        private readonly DailyAccountService $dailyAccounts,
     ) {}
 
     public function create(array $data, array $items, int $userId): Sale
@@ -277,10 +277,13 @@ class SaleService
 
         $this->refreshPaymentState($sale);
 
+        $sale->loadMissing('customer');
+        $this->dailyAccounts->postSalePayment($record->setRelation('payable', $sale));
+
         if ($notify) {
             $this->notifications->paymentReceived(
                 $record,
-                "Payment of Rs. ".number_format($amount, 2)." received for invoice {$sale->invoice_no}.",
+                'Payment of Rs. '.number_format($amount, 2)." received for invoice {$sale->invoice_no}.",
                 $sale->customer?->phone,
             );
         }

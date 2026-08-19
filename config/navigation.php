@@ -48,6 +48,13 @@ return [
         'roles' => ['admin', 'store_manager', 'cashier'],
     ],
     [
+        'label' => 'Daily Accounts',
+        'route' => 'cashier.daily-accounts.index',
+        'active' => 'cashier.daily-accounts.*',
+        'icon' => 'banknotes',
+        'roles' => ['admin', 'store_manager', 'cashier'],
+    ],
+    [
         'label' => 'Customers',
         'route' => 'store.customers.index',
         'active' => 'store.customers.*',

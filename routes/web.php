@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\SmsLogController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Cashier\DailyAccountController;
 use App\Http\Controllers\Construction\DailyProgressController;
 use App\Http\Controllers\Construction\MaterialRequestController;
 use App\Http\Controllers\Construction\ProjectController;
@@ -46,6 +47,13 @@ Route::middleware('auth')->group(function () {
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::post('notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
+});
+
+Route::middleware(['auth', 'role:admin|store_manager|cashier'])->prefix('cashier')->name('cashier.')->group(function () {
+    Route::get('daily-accounts', [DailyAccountController::class, 'index'])->name('daily-accounts.index');
+    Route::post('daily-accounts', [DailyAccountController::class, 'store'])->name('daily-accounts.store');
+    Route::put('daily-accounts/opening', [DailyAccountController::class, 'updateOpening'])->name('daily-accounts.opening');
+    Route::delete('daily-accounts/{entry}', [DailyAccountController::class, 'destroy'])->name('daily-accounts.destroy');
 });
 
 Route::middleware(['auth', 'role:admin|store_manager|site_manager'])->prefix('reports')->name('reports.')->group(function () {

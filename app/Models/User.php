@@ -62,6 +62,11 @@ class User extends Authenticatable
         return $this->hasAnyRole(['admin', 'store_manager', 'cashier']);
     }
 
+    public function canManageDailyAccounts(): bool
+    {
+        return $this->hasAnyRole(['admin', 'store_manager', 'cashier']);
+    }
+
     public function canViewConstruction(): bool
     {
         return $this->hasAnyRole(['admin', 'site_manager']);

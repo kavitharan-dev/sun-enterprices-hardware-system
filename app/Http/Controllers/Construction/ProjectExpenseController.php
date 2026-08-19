@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Construction\ProjectExpenseRequest;
 use App\Models\Project;
 use App\Models\ProjectExpense;
+use App\Services\DailyAccountService;
 use App\Services\NotificationService;
 use App\Traits\LogsActivity;
 use Illuminate\Http\RedirectResponse;
@@ -13,6 +14,8 @@ use Illuminate\Http\RedirectResponse;
 class ProjectExpenseController extends Controller
 {
     use LogsActivity;
+
+    public function __construct(private readonly DailyAccountService $dailyAccounts) {}
 
     public function store(ProjectExpenseRequest $request, Project $project, NotificationService $notifications): RedirectResponse
     {
@@ -23,6 +26,7 @@ class ProjectExpenseController extends Controller
 
         $this->logActivity('created', 'ProjectExpense', "Added {$expense->category->label()} expense to {$project->project_code}", $expense);
         $notifications->maybeNotifyBudgetAlert($project->fresh());
+        $this->dailyAccounts->postProjectExpense($expense->setRelation('project', $project));
 
         return back()->with('success', 'Expense recorded.');
     }
@@ -36,6 +40,7 @@ class ProjectExpenseController extends Controller
             return back()->with('error', 'Material expenses from issues cannot be deleted here.');
         }
 
+        $this->dailyAccounts->removeFor($projectExpense);
         $projectExpense->delete();
         $this->logActivity('deleted', 'ProjectExpense', "Deleted expense from {$project->project_code}");
 

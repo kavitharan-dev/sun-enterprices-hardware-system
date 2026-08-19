@@ -8,7 +8,7 @@
 <div class="space-y-6">
     <div>
         <h1 class="text-2xl font-bold text-slate-900">Cashier Dashboard</h1>
-        <p class="mt-1 text-sm text-slate-500">Sales and customer payment overview.</p>
+        <p class="mt-1 text-sm text-slate-500">Sales, customers, and the daily cash book.</p>
     </div>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -19,7 +19,8 @@
     </div>
     <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-wrap gap-3">
-        <a href="{{ route('store.sales.create') }}" class="btn btn-primary">New sale</a>
+        <a href="{{ route('cashier.daily-accounts.index') }}" class="btn btn-primary">Daily accounts</a>
+        <a href="{{ route('store.sales.create') }}" class="btn btn-success">New sale</a>
         <a href="{{ route('store.customers.index') }}" class="btn btn-secondary">Customers</a>
         </div>
     </div>

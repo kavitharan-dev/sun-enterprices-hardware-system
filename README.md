@@ -145,7 +145,15 @@ never run that seeder on a live database.
 - [x] Partial issues mark the request `partially_issued` until fully issued
 - [x] Site manager can see issued quantities; cannot issue stock
 
-## Weekly worker wages
+## Daily accounts (cashier)
+
+The cashier page at `/cashier/daily-accounts` is the company cash book.
+
+- Sales, purchases, worker advances/wages, site owner receipts, and manual site expenses post here automatically
+- Opening + income − expenses = closing for the day
+- Project budget remaining stays on the project page and is not mixed into this till balance
+- Credit sales do not post until money is actually received
+- Material issues and auto labour allocations do not post a second time (stock was already bought; wages were already paid)
 
 Paid every Saturday. Each worker has a weekly salary; the pay week runs Sunday to Saturday.
 

@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Construction\ProjectOwnerPaymentRequest;
 use App\Models\Project;
 use App\Models\ProjectOwnerPayment;
+use App\Services\DailyAccountService;
 use App\Traits\LogsActivity;
 use Illuminate\Http\RedirectResponse;
 
 class ProjectOwnerPaymentController extends Controller
 {
     use LogsActivity;
+
+    public function __construct(private readonly DailyAccountService $dailyAccounts) {}
 
     public function store(ProjectOwnerPaymentRequest $request, Project $project): RedirectResponse
     {
@@ -27,6 +30,8 @@ class ProjectOwnerPaymentController extends Controller
             $payment,
         );
 
+        $this->dailyAccounts->postOwnerPayment($payment->setRelation('project', $project));
+
         return back()->with('success', 'Site owner payment recorded. Budget remaining and cash balance have been updated.');
     }
 
@@ -36,6 +41,7 @@ class ProjectOwnerPaymentController extends Controller
         $this->authorize('recordOwnerPayments', $project);
 
         $amount = (float) $ownerPayment->amount;
+        $this->dailyAccounts->removeFor($ownerPayment);
         $ownerPayment->delete();
 
         $this->logActivity(
