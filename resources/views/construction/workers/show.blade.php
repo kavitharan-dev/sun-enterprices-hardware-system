@@ -5,7 +5,10 @@
                 <h2 class="text-xl font-semibold text-slate-800">{{ $worker->name }}</h2>
                 <p class="text-sm text-slate-500">{{ $worker->worker_code }}</p>
             </div>
-            <a href="{{ route('construction.workers.edit', $worker) }}" class="btn btn-dark">Edit</a>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('construction.workers.payroll', $worker) }}" class="btn btn-primary">Weekly salary</a>
+                <a href="{{ route('construction.workers.edit', $worker) }}" class="btn btn-dark">Edit</a>
+            </div>
         </div>
     </x-slot>
 
@@ -15,6 +18,10 @@
             <p><span class="text-slate-500">Phone:</span> {{ $worker->phone ?? '—' }}</p>
             <p><span class="text-slate-500">NIC:</span> {{ $worker->nic ?? '—' }}</p>
             <p><span class="text-slate-500">Daily rate:</span> Rs. {{ number_format((float) $worker->daily_rate, 2) }}</p>
+            <p><span class="text-slate-500">Weekly salary:</span> Rs. {{ number_format((float) $worker->weekly_salary, 2) }}</p>
+            @if ($worker->hasDebt())
+                <p class="rounded-md bg-rose-50 px-2 py-1 text-rose-700">Owes the shop Rs. {{ number_format($worker->debtBalance(), 2) }}</p>
+            @endif
             <p><x-status-badge :status="$worker->status" /></p>
         </div>
         <div class="lg:col-span-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">

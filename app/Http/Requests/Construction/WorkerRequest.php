@@ -21,6 +21,7 @@ class WorkerRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:40'],
             'job_role' => ['nullable', 'string', 'max:80'],
             'daily_rate' => ['nullable', 'numeric', 'min:0'],
+            'weekly_salary' => ['nullable', 'numeric', 'min:0'],
             'join_date' => ['nullable', 'date'],
             'status' => ['required', Rule::enum(WorkerStatus::class)],
         ];

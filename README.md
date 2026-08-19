@@ -144,6 +144,19 @@ never run that seeder on a live database.
 - [x] Partial issues mark the request `partially_issued` until fully issued
 - [x] Site manager can see issued quantities; cannot issue stock
 
+## Weekly worker wages
+
+Paid every Saturday. Each worker has a weekly salary; the pay week runs Sunday to Saturday.
+
+- Work sheet per week: date, day, and the project/site the worker was on
+- Money given before Saturday is an **advance**, recorded with one choice:
+  - **Deduct from current week** — the Saturday payout drops by that amount
+  - **Do not deduct** — the worker still gets the full salary and the amount becomes **worker debt**
+- Debt carries forward. At any later settlement you choose how much of it to recover, or none
+- Settling a week posts the wages as a labour expense, split across the sites on that week's sheet
+- Site managers fill the work sheet; only admin hands over money and settles a week
+- A settled week is locked
+
 ## Production readiness (added on existing app)
 
 - Text.lk SMS via queued jobs + `sms_logs` (disabled until `SMS_ENABLED=true`)

@@ -31,4 +31,20 @@ class WorkerPolicy
     {
         return $user->hasRole('admin');
     }
+
+    /**
+     * Site managers fill in the weekly work sheet.
+     */
+    public function recordWork(User $user, Worker $worker): bool
+    {
+        return $user->canManageWorkers();
+    }
+
+    /**
+     * Handing over money and closing a pay week is an owner's decision.
+     */
+    public function managePayroll(User $user, Worker $worker): bool
+    {
+        return $user->hasRole('admin');
+    }
 }

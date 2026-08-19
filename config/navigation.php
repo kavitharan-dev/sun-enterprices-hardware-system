@@ -81,6 +81,13 @@ return [
         'roles' => ['admin', 'site_manager'],
     ],
     [
+        'label' => 'Weekly Wages',
+        'route' => 'construction.payroll.index',
+        'active' => 'construction.payroll.*',
+        'icon' => 'banknotes',
+        'roles' => ['admin', 'site_manager'],
+    ],
+    [
         'label' => 'My Requests',
         'route' => 'construction.material-requests.index',
         'active' => 'construction.material-requests.*',

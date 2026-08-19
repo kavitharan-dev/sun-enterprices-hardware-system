@@ -23,7 +23,8 @@
                     <th class="px-4 py-3">Worker</th>
                     <th class="px-4 py-3">Role</th>
                     <th class="px-4 py-3">Phone</th>
-                    <th class="px-4 py-3 text-right">Daily rate</th>
+                    <th class="px-4 py-3 text-right">Weekly salary</th>
+                    <th class="px-4 py-3 text-right">Debt</th>
                     <th class="px-4 py-3">Status</th>
                     <th class="px-4 py-3"></th>
                 </tr>
@@ -37,12 +38,18 @@
                         </td>
                         <td class="px-4 py-3">{{ $worker->job_role ?? '—' }}</td>
                         <td class="px-4 py-3">{{ $worker->phone ?? '—' }}</td>
-                        <td class="px-4 py-3 text-right">Rs. {{ number_format((float) $worker->daily_rate, 2) }}</td>
+                        <td class="px-4 py-3 text-right">Rs. {{ number_format((float) $worker->weekly_salary, 2) }}</td>
+                        @php($debt = $worker->debtBalance())
+                        <td class="px-4 py-3 text-right {{ $debt > 0 ? 'font-semibold text-rose-700' : 'text-slate-400' }}">
+                            {{ $debt > 0 ? 'Rs. '.number_format($debt, 2) : '—' }}
+                        </td>
                         <td class="px-4 py-3"><x-status-badge :status="$worker->status" /></td>
-                        <td class="px-4 py-3 text-right"><a href="{{ route('construction.workers.edit', $worker) }}" class="btn btn-secondary btn-sm">Edit</a></td>
+                        <td class="px-4 py-3 text-right">
+                            <a href="{{ route('construction.workers.payroll', $worker) }}" class="btn btn-secondary btn-sm">Salary</a>
+                        </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">No workers yet.</td></tr>
+                    <tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No workers yet.</td></tr>
                 @endforelse
             </tbody>
         </table>

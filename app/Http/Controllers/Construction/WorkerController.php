@@ -54,6 +54,7 @@ class WorkerController extends Controller
             ...$request->validated(),
             'worker_code' => $this->documentNumbers->next('worker_prefix', 'WRK', Worker::class, 'worker_code'),
             'daily_rate' => $request->input('daily_rate', 0),
+            'weekly_salary' => $request->input('weekly_salary', 0),
         ]);
 
         $this->logActivity('created', 'Worker', "Created worker {$worker->name}", $worker);
@@ -87,6 +88,7 @@ class WorkerController extends Controller
         $worker->update([
             ...$request->validated(),
             'daily_rate' => $request->input('daily_rate', 0),
+            'weekly_salary' => $request->input('weekly_salary', 0),
         ]);
 
         $this->logActivity('updated', 'Worker', "Updated worker {$worker->name}", $worker);

@@ -20,6 +20,11 @@
                 <x-text-input id="daily_rate" name="daily_rate" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('daily_rate', $worker->daily_rate ?? 0)" />
             </div>
             <div>
+                <x-input-label for="weekly_salary" value="Weekly salary (Rs.)" />
+                <x-text-input id="weekly_salary" name="weekly_salary" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('weekly_salary', $worker->weekly_salary ?? 0)" />
+                <p class="mt-1 text-xs text-slate-500">Paid every Saturday. Used for advances and debt.</p>
+            </div>
+            <div>
                 <x-input-label for="phone" value="Phone" />
                 <x-text-input id="phone" name="phone" class="mt-1 block w-full" :value="old('phone', $worker->phone ?? '')" />
             </div>

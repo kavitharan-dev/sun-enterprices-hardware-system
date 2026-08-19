@@ -4,15 +4,16 @@ use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\SmsLogController;
 use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ReportController;
 use App\Http\Controllers\Construction\DailyProgressController;
 use App\Http\Controllers\Construction\MaterialRequestController;
 use App\Http\Controllers\Construction\ProjectController;
 use App\Http\Controllers\Construction\ProjectExpenseController;
 use App\Http\Controllers\Construction\WorkerController;
+use App\Http\Controllers\Construction\WorkerPayrollController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\Store\BrandController;
 use App\Http\Controllers\Store\CategoryController;
 use App\Http\Controllers\Store\CustomerController;
@@ -103,6 +104,13 @@ Route::middleware(['auth', 'role:admin|site_manager'])->prefix('construction')->
     Route::delete('projects/{project}/expenses/{projectExpense}', [ProjectExpenseController::class, 'destroy'])->name('projects.expenses.destroy');
     Route::resource('projects', ProjectController::class);
 
+    Route::get('payroll', [WorkerPayrollController::class, 'index'])->name('payroll.index');
+    Route::get('workers/{worker}/payroll', [WorkerPayrollController::class, 'show'])->name('workers.payroll');
+    Route::post('workers/{worker}/payroll/advances', [WorkerPayrollController::class, 'storeAdvance'])->name('workers.payroll.advances.store');
+    Route::post('workers/{worker}/payroll/weeks/{week}/settle', [WorkerPayrollController::class, 'settle'])->name('workers.payroll.settle');
+    Route::post('workers/{worker}/payroll/weeks/{week}/reopen', [WorkerPayrollController::class, 'reopen'])->name('workers.payroll.reopen');
+    Route::post('workers/{worker}/payroll/work-days', [WorkerPayrollController::class, 'storeWorkDay'])->name('workers.payroll.work-days.store');
+    Route::delete('workers/{worker}/payroll/work-days/{workDay}', [WorkerPayrollController::class, 'destroyWorkDay'])->name('workers.payroll.work-days.destroy');
     Route::resource('workers', WorkerController::class);
 
     Route::post('material-requests/{materialRequest}/submit', [MaterialRequestController::class, 'submit'])->name('material-requests.submit');
