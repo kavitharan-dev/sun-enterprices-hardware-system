@@ -1,0 +1,201 @@
+Category,Brand,Product Name,Unit,SKU
+Cement & Building Materials,INSEE,Sanstha Portland Composite Cement,bag,CBM-001
+Cement & Building Materials,INSEE,Portland Composite Cement,bag,CBM-002
+Cement & Building Materials,Tokyo Cement,Tokyo Superbond Cement,bag,CBM-003
+Cement & Building Materials,Lanwa,Lanwa Cement,bag,CBM-004
+Cement & Building Materials,Sanstha,Sanstha Cement,bag,CBM-005
+Cement & Building Materials,Generic,River Sand,m³,CBM-006
+Cement & Building Materials,Generic,Manufactured Sand,m³,CBM-007
+Cement & Building Materials,Generic,"Crushed Stone Aggregate 3/4""",m³,CBM-008
+Cement & Building Materials,Generic,"Crushed Stone Aggregate 1/2""",m³,CBM-009
+Cement & Building Materials,Generic,"Metal Aggregate 3/4""",m³,CBM-010
+Cement & Building Materials,Generic,Brick,piece,CBM-011
+Cement & Building Materials,Generic,"Cement Block 4""",piece,CBM-012
+Cement & Building Materials,Generic,"Cement Block 6""",piece,CBM-013
+Cement & Building Materials,Generic,"Cement Block 8""",piece,CBM-014
+Cement & Building Materials,Generic,Block Gal,piece,CBM-015
+Cement & Building Materials,Generic,Binding Wire,kg,CBM-016
+Cement & Building Materials,Generic,Building Lime,bag,CBM-017
+Cement & Building Materials,Generic,Plastering Sand,m³,CBM-018
+Cement & Building Materials,Generic,Quarry Dust,m³,CBM-019
+Cement & Building Materials,Generic,Concrete Admixture,litre,CBM-020
+Cement & Building Materials,St. Anthony's,Construction Adhesive,tube,CBM-021
+Cement & Building Materials,Swisstek,Tile Adhesive,bag,CBM-022
+Cement & Building Materials,Swisstek,Polymer Modified Tile Grout,bag,CBM-023
+Cement & Building Materials,Generic,Waterproofing Compound,kg,CBM-024
+Cement & Building Materials,Generic,Concrete Curing Compound,litre,CBM-025
+Steel & Metal,MELWA,High Tensile Reinforcement Bar 10mm,length,STM-001
+Steel & Metal,MELWA,High Tensile Reinforcement Bar 12mm,length,STM-002
+Steel & Metal,MELWA,High Tensile Reinforcement Bar 16mm,length,STM-003
+Steel & Metal,MELWA,High Tensile Reinforcement Bar 20mm,length,STM-004
+Steel & Metal,MELWA,High Tensile Reinforcement Bar 25mm,length,STM-005
+Steel & Metal,MELBN,High Tensile Reinforcement Bar 10mm,length,STM-006
+Steel & Metal,MELBN,High Tensile Reinforcement Bar 12mm,length,STM-007
+Steel & Metal,MELBN,High Tensile Reinforcement Bar 16mm,length,STM-008
+Steel & Metal,MELBN,High Tensile Reinforcement Bar 20mm,length,STM-009
+Steel & Metal,Lanwa,"GI Box Bar 1"" x 1""",length,STM-010
+Steel & Metal,Lanwa,"GI Box Bar 2"" x 1""",length,STM-011
+Steel & Metal,Lanwa,"GI Box Bar 2"" x 2""",length,STM-012
+Steel & Metal,Generic,MS Angle Bar,length,STM-013
+Steel & Metal,Generic,MS Flat Bar,length,STM-014
+Steel & Metal,Generic,GI Sheet,sheet,STM-015
+Steel & Metal,Generic,Mild Steel Sheet,sheet,STM-016
+Steel & Metal,Generic,GI Wire,kg,STM-017
+Steel & Metal,Generic,Welding Rod,kg,STM-018
+Steel & Metal,Generic,Expanded Metal Mesh,sheet,STM-019
+Steel & Metal,Generic,Welded Wire Mesh,sheet,STM-020
+Plumbing & Water Systems,S-lon,"uPVC Pipe 1/2""",length,PLB-001
+Plumbing & Water Systems,S-lon,"uPVC Pipe 3/4""",length,PLB-002
+Plumbing & Water Systems,S-lon,"uPVC Pipe 1""",length,PLB-003
+Plumbing & Water Systems,S-lon,"uPVC Pipe 1 1/4""",length,PLB-004
+Plumbing & Water Systems,S-lon,"uPVC Pipe 1 1/2""",length,PLB-005
+Plumbing & Water Systems,S-lon,"uPVC Pipe 2""",length,PLB-006
+Plumbing & Water Systems,S-lon,"CPVC Pipe 1/2""",length,PLB-007
+Plumbing & Water Systems,S-lon,"CPVC Pipe 3/4""",length,PLB-008
+Plumbing & Water Systems,S-lon,"uPVC Elbow 1/2""",piece,PLB-009
+Plumbing & Water Systems,S-lon,"uPVC Elbow 3/4""",piece,PLB-010
+Plumbing & Water Systems,S-lon,"uPVC Tee 1/2""",piece,PLB-011
+Plumbing & Water Systems,S-lon,"uPVC Tee 3/4""",piece,PLB-012
+Plumbing & Water Systems,S-lon,"uPVC Coupler 1/2""",piece,PLB-013
+Plumbing & Water Systems,S-lon,"uPVC Coupler 3/4""",piece,PLB-014
+Plumbing & Water Systems,S-lon,"Ball Valve 1/2""",piece,PLB-015
+Plumbing & Water Systems,S-lon,"Ball Valve 3/4""",piece,PLB-016
+Plumbing & Water Systems,S-lon,Solvent Cement,tin,PLB-017
+Plumbing & Water Systems,S-lon,Electrical Conduit 20mm,length,PLB-018
+Plumbing & Water Systems,S-lon,Rainwater Gutter,length,PLB-019
+Plumbing & Water Systems,S-lon,Flexible Hose,piece,PLB-020
+Plumbing & Water Systems,Anton,Water Pipe,length,PLB-021
+Plumbing & Water Systems,Anton,Pipe Fitting,piece,PLB-022
+Plumbing & Water Systems,Anton,Water Tank,piece,PLB-023
+Plumbing & Water Systems,ERA,Plumbing Fitting,piece,PLB-024
+Plumbing & Water Systems,Phoenix,Plumbing Fitting,piece,PLB-025
+Plumbing & Water Systems,Water Tech,Water Tank,piece,PLB-026
+Plumbing & Water Systems,Pegler,Ball Valve,piece,PLB-027
+Plumbing & Water Systems,Plumber Bathware,Basin Tap,piece,PLB-028
+Plumbing & Water Systems,Plumber Bathware,Bib Tap,piece,PLB-029
+Plumbing & Water Systems,Mueller,Valve,piece,PLB-030
+Paint & Accessories,JAT,Interior Wall Emulsion,litre,PNT-001
+Paint & Accessories,JAT,Exterior Wall Emulsion,litre,PNT-002
+Paint & Accessories,JAT,Wall Filler,kg,PNT-003
+Paint & Accessories,JAT,Metal Primer,litre,PNT-004
+Paint & Accessories,JAT,Wood Primer,litre,PNT-005
+Paint & Accessories,JAT,Gloss Enamel,litre,PNT-006
+Paint & Accessories,Nippon Paint,Interior Emulsion,litre,PNT-007
+Paint & Accessories,Nippon Paint,Exterior Emulsion,litre,PNT-008
+Paint & Accessories,Nippon Paint,Floor Paint,litre,PNT-009
+Paint & Accessories,Nippon Paint,Metal Primer,litre,PNT-010
+Paint & Accessories,Nippon Paint,Woodcare Paint,litre,PNT-011
+Paint & Accessories,Dulux,Interior Emulsion,litre,PNT-012
+Paint & Accessories,Dulux,Exterior Emulsion,litre,PNT-013
+Paint & Accessories,Dulux,Metal Primer,litre,PNT-014
+Paint & Accessories,Robbialac,Interior Emulsion,litre,PNT-015
+Paint & Accessories,Robbialac,Exterior Emulsion,litre,PNT-016
+Paint & Accessories,Robbialac,Metal Primer,litre,PNT-017
+Paint & Accessories,Asian Paints,Interior Emulsion,litre,PNT-018
+Paint & Accessories,Asian Paints,Exterior Emulsion,litre,PNT-019
+Paint & Accessories,Asian Paints,Metal Primer,litre,PNT-020
+Paint & Accessories,Multilac,Decorative Paint,litre,PNT-021
+Paint & Accessories,Duco,Spray Paint,can,PNT-022
+Paint & Accessories,Harris,Paint Brush 1 inch,piece,PNT-023
+Paint & Accessories,Harris,Paint Roller 9 inch,piece,PNT-024
+Paint & Accessories,Generic,Paint Thinner,litre,PNT-025
+Electrical,ACL Cables,Building Wire 1/1.13mm 100m,roll,ELC-001
+Electrical,ACL Cables,Building Wire 7/0.53mm Single 100m,roll,ELC-002
+Electrical,ACL Cables,Building Wire 7/0.67mm Single 100m,roll,ELC-003
+Electrical,ACL Cables,Building Wire 7/0.85mm Single 100m,roll,ELC-004
+Electrical,ACL Cables,Building Wire 7/1.04mm Single 100m,roll,ELC-005
+Electrical,ACL Cables,Building Wire 7/0.67mm Twin 100m,roll,ELC-006
+Electrical,ACL Cables,Flexible Chord 16/0.20mm 3 Core 100m,roll,ELC-007
+Electrical,ACL Cables,Flexible Chord 32/0.20mm 4 Core 100m,roll,ELC-008
+Electrical,ACL Cables,Telephone Cable 4 x 0.50mm² 100m,roll,ELC-009
+Electrical,ACL Cables,Fire Zero Cable 7/0.53mm Single 100m,roll,ELC-010
+Electrical,ACL Cables,1 Gang 1 Way Switch,piece,ELC-011
+Electrical,ACL Cables,2 Gang 1 Way Switch,piece,ELC-012
+Electrical,ACL Cables,3 Gang 1 Way Switch,piece,ELC-013
+Electrical,ACL Cables,4 Gang 1 Way Switch,piece,ELC-014
+Electrical,ACL Cables,13A Switched Socket,piece,ELC-015
+Electrical,ACL Cables,13A Twin Socket,piece,ELC-016
+Electrical,ACL Cables,20A Double Pole Switch,piece,ELC-017
+Electrical,ACL Cables,Light Dimmer,piece,ELC-018
+Electrical,ACL Cables,5 Step Fan Controller,piece,ELC-019
+Electrical,ACL Cables,13A Plug Top,piece,ELC-020
+Electrical,ACL Cables,Lamp Holder,piece,ELC-021
+Electrical,ACL Cables,Ceiling Rose,piece,ELC-022
+Electrical,ACL Cables,PVC Insulating Tape,roll,ELC-023
+Electrical,ACL Cables,MCB Single Pole,piece,ELC-024
+Electrical,ACL Cables,MCB Double Pole,piece,ELC-025
+Electrical,ACL Cables,MCB Three Pole,piece,ELC-026
+Electrical,ACL Cables,Isolator 40A Double Pole,piece,ELC-027
+Electrical,ACL Cables,RCD 40A Double Pole,piece,ELC-028
+Electrical,Kelani Cables,Electrical Cable,roll,ELC-029
+Electrical,Sierra Cables,Electrical Cable,roll,ELC-030
+Electrical,Orange Electric,Switch,piece,ELC-031
+Electrical,Schneider,MCB,piece,ELC-032
+Electrical,SIEMENS,MCB,piece,ELC-033
+Electrical,ANLY,Electrical Relay,piece,ELC-034
+Electrical,Polycrome,Electrical Accessory,piece,ELC-035
+Tools & Machinery,Makita,Cordless Drill,piece,TLS-001
+Tools & Machinery,Makita,Impact Drill,piece,TLS-002
+Tools & Machinery,Makita,Angle Grinder,piece,TLS-003
+Tools & Machinery,Makita,Rotary Hammer,piece,TLS-004
+Tools & Machinery,Makita,Circular Saw,piece,TLS-005
+Tools & Machinery,Makita,Power Cutter,piece,TLS-006
+Tools & Machinery,Bosch,Rotary Hammer,piece,TLS-007
+Tools & Machinery,Bosch,Angle Grinder,piece,TLS-008
+Tools & Machinery,Bosch,Electric Drill,piece,TLS-009
+Tools & Machinery,Bosch,Circular Saw,piece,TLS-010
+Tools & Machinery,Bosch,Jigsaw,piece,TLS-011
+Tools & Machinery,Stanly,Claw Hammer,piece,TLS-012
+Tools & Machinery,Stanly,Screwdriver Set,set,TLS-013
+Tools & Machinery,Stanly,Combination Spanner Set,set,TLS-014
+Tools & Machinery,Stanly,Combination Pliers,piece,TLS-015
+Tools & Machinery,Stanly,Adjustable Wrench,piece,TLS-016
+Tools & Machinery,Stanly,Measuring Tape 5m,piece,TLS-017
+Tools & Machinery,Stanly,Spirit Level,piece,TLS-018
+Tools & Machinery,Wurth,Drill Bit Set,set,TLS-019
+Tools & Machinery,Wurth,Cutting Disc,piece,TLS-020
+Tools & Machinery,Wurth,Grinding Disc,piece,TLS-021
+Tools & Machinery,Solex,Water Pump,piece,TLS-022
+Tools & Machinery,Yamaha,Generator,piece,TLS-023
+Tools & Machinery,Karcher,Pressure Washer,piece,TLS-024
+Tools & Machinery,STC,Mammoty,piece,TLS-025
+Fasteners & Consumables,Generic,Common Nails,kg,FST-001
+Fasteners & Consumables,Generic,Concrete Nails,box,FST-002
+Fasteners & Consumables,Generic,Wood Screws,box,FST-003
+Fasteners & Consumables,Generic,Self Tapping Screws,box,FST-004
+Fasteners & Consumables,Generic,Roofing Screws,box,FST-005
+Fasteners & Consumables,Generic,Hex Bolt M6,piece,FST-006
+Fasteners & Consumables,Generic,Hex Bolt M8,piece,FST-007
+Fasteners & Consumables,Generic,Hex Bolt M10,piece,FST-008
+Fasteners & Consumables,Generic,Nut M6,piece,FST-009
+Fasteners & Consumables,Generic,Nut M8,piece,FST-010
+Fasteners & Consumables,Generic,Nut M10,piece,FST-011
+Fasteners & Consumables,Generic,Washer M6,piece,FST-012
+Fasteners & Consumables,Generic,Washer M8,piece,FST-013
+Fasteners & Consumables,Generic,Wall Plug 6mm,pack,FST-014
+Fasteners & Consumables,Generic,Wall Plug 8mm,pack,FST-015
+Fasteners & Consumables,Generic,Anchor Bolt,piece,FST-016
+Fasteners & Consumables,Generic,Cutting Disc 4 inch,piece,FST-017
+Fasteners & Consumables,Generic,Grinding Disc 4 inch,piece,FST-018
+Fasteners & Consumables,Generic,Silicone Sealant,tube,FST-019
+Fasteners & Consumables,Generic,PTFE Thread Seal Tape,roll,FST-020
+"Safety, Hardware & Miscellaneous",Generic,Safety Helmet,piece,MIS-001
+"Safety, Hardware & Miscellaneous",Generic,Safety Gloves,pair,MIS-002
+"Safety, Hardware & Miscellaneous",Generic,Safety Goggles,piece,MIS-003
+"Safety, Hardware & Miscellaneous",Generic,Safety Vest,piece,MIS-004
+"Safety, Hardware & Miscellaneous",Generic,Dust Mask,box,MIS-005
+"Safety, Hardware & Miscellaneous",Generic,Ear Protection,pair,MIS-006
+"Safety, Hardware & Miscellaneous",Generic,Rain Coat,piece,MIS-007
+"Safety, Hardware & Miscellaneous",Generic,PVC Gloves,pair,MIS-008
+"Safety, Hardware & Miscellaneous",Generic,Door Lock,piece,MIS-009
+"Safety, Hardware & Miscellaneous",Generic,Padlock,piece,MIS-010
+"Safety, Hardware & Miscellaneous",Generic,Door Hinge,pair,MIS-011
+"Safety, Hardware & Miscellaneous",Generic,Door Handle,set,MIS-012
+"Safety, Hardware & Miscellaneous",Generic,Cabinet Handle,piece,MIS-013
+"Safety, Hardware & Miscellaneous",Generic,Door Stopper,piece,MIS-014
+"Safety, Hardware & Miscellaneous",Generic,Silicone Sealant,tube,MIS-015
+"Safety, Hardware & Miscellaneous",Generic,Construction Adhesive,tube,MIS-016
+"Safety, Hardware & Miscellaneous",Generic,Masking Tape,roll,MIS-017
+"Safety, Hardware & Miscellaneous",Generic,Duct Tape,roll,MIS-018
+"Safety, Hardware & Miscellaneous",Generic,Measuring Tape 3m,piece,MIS-019
+"Safety, Hardware & Miscellaneous",Generic,Utility Knife,piece,MIS-020

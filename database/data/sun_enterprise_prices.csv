@@ -1,0 +1,201 @@
+SKU,Product,Purchase,Selling
+CBM-001,Sanstha Portland Composite Cement,2400,2600
+CBM-002,Portland Composite Cement,2400,2600
+CBM-003,Tokyo Superbond Cement,2450,2650
+CBM-004,Lanwa Cement,2350,2550
+CBM-005,Sanstha Cement,2350,2550
+CBM-006,River Sand,12000,14500
+CBM-007,Manufactured Sand,9000,11000
+CBM-008,Crushed Stone Aggregate 3/4in,11000,13500
+CBM-009,Crushed Stone Aggregate 1/2in,11000,13500
+CBM-010,Metal Aggregate 3/4in,11000,13500
+CBM-011,Brick,22,28
+CBM-012,Cement Block 4in,95,120
+CBM-013,Cement Block 6in,130,160
+CBM-014,Cement Block 8in,160,195
+CBM-015,Block Gal,95,120
+CBM-016,Binding Wire,420,500
+CBM-017,Building Lime,850,1050
+CBM-018,Plastering Sand,12000,14500
+CBM-019,Quarry Dust,7500,9500
+CBM-020,Concrete Admixture,750,950
+CBM-021,Construction Adhesive,850,1100
+CBM-022,Tile Adhesive,1450,1800
+CBM-023,Polymer Modified Tile Grout,900,1150
+CBM-024,Waterproofing Compound,950,1200
+CBM-025,Concrete Curing Compound,900,1150
+STM-001,Reinforcement Bar 10mm,1850,2150
+STM-002,Reinforcement Bar 12mm,2700,3100
+STM-003,Reinforcement Bar 16mm,4800,5500
+STM-004,Reinforcement Bar 20mm,7500,8600
+STM-005,Reinforcement Bar 25mm,11700,13400
+STM-006,Reinforcement Bar 10mm MELBN,1800,2100
+STM-007,Reinforcement Bar 12mm MELBN,2650,3050
+STM-008,Reinforcement Bar 16mm MELBN,4700,5400
+STM-009,Reinforcement Bar 20mm MELBN,7400,8500
+STM-010,GI Box Bar 1x1,2400,2850
+STM-011,GI Box Bar 2x1,3400,4000
+STM-012,GI Box Bar 2x2,4900,5700
+STM-013,MS Angle Bar,3200,3800
+STM-014,MS Flat Bar,2200,2650
+STM-015,GI Sheet,3800,4500
+STM-016,Mild Steel Sheet,6500,7600
+STM-017,GI Wire,480,570
+STM-018,Welding Rod,750,900
+STM-019,Expanded Metal Mesh,3200,3850
+STM-020,Welded Wire Mesh,4200,5000
+PLB-001,uPVC Pipe 1/2in,450,560
+PLB-002,uPVC Pipe 3/4in,620,770
+PLB-003,uPVC Pipe 1in,950,1180
+PLB-004,uPVC Pipe 1 1/4in,1450,1780
+PLB-005,uPVC Pipe 1 1/2in,1750,2150
+PLB-006,uPVC Pipe 2in,2600,3150
+PLB-007,CPVC Pipe 1/2in,950,1180
+PLB-008,CPVC Pipe 3/4in,1350,1650
+PLB-009,uPVC Elbow 1/2in,45,65
+PLB-010,uPVC Elbow 3/4in,60,85
+PLB-011,uPVC Tee 1/2in,55,80
+PLB-012,uPVC Tee 3/4in,75,105
+PLB-013,uPVC Coupler 1/2in,35,55
+PLB-014,uPVC Coupler 3/4in,48,70
+PLB-015,Ball Valve 1/2in,480,620
+PLB-016,Ball Valve 3/4in,680,850
+PLB-017,Solvent Cement,550,700
+PLB-018,Electrical Conduit 20mm,240,320
+PLB-019,Rainwater Gutter,1450,1800
+PLB-020,Flexible Hose,380,520
+PLB-021,Anton Water Pipe,900,1120
+PLB-022,Anton Pipe Fitting,120,165
+PLB-023,Anton Water Tank,24000,28500
+PLB-024,ERA Plumbing Fitting,150,210
+PLB-025,Phoenix Plumbing Fitting,140,195
+PLB-026,Water Tech Water Tank,22000,26500
+PLB-027,Pegler Ball Valve,1650,2050
+PLB-028,Basin Tap,2400,3000
+PLB-029,Bib Tap,1250,1600
+PLB-030,Mueller Valve,1850,2300
+PNT-001,JAT Interior Wall Emulsion,900,1150
+PNT-002,JAT Exterior Wall Emulsion,1250,1550
+PNT-003,JAT Wall Filler,320,420
+PNT-004,JAT Metal Primer,1150,1450
+PNT-005,JAT Wood Primer,1200,1500
+PNT-006,JAT Gloss Enamel,1650,2050
+PNT-007,Nippon Interior Emulsion,950,1200
+PNT-008,Nippon Exterior Emulsion,1350,1680
+PNT-009,Nippon Floor Paint,1750,2150
+PNT-010,Nippon Metal Primer,1200,1500
+PNT-011,Nippon Woodcare Paint,1850,2300
+PNT-012,Dulux Interior Emulsion,1100,1380
+PNT-013,Dulux Exterior Emulsion,1550,1900
+PNT-014,Dulux Metal Primer,1250,1570
+PNT-015,Robbialac Interior Emulsion,950,1200
+PNT-016,Robbialac Exterior Emulsion,1350,1680
+PNT-017,Robbialac Metal Primer,1180,1480
+PNT-018,Asian Interior Emulsion,900,1150
+PNT-019,Asian Exterior Emulsion,1300,1620
+PNT-020,Asian Metal Primer,1150,1440
+PNT-021,Multilac Decorative Paint,1250,1570
+PNT-022,Duco Spray Paint,850,1100
+PNT-023,Paint Brush 1 inch,320,450
+PNT-024,Paint Roller 9 inch,650,850
+PNT-025,Paint Thinner,550,700
+ELC-001,Building Wire 1/1.13mm 100m,4200,4900
+ELC-002,Building Wire 7/0.53mm Single 100m,6800,7900
+ELC-003,Building Wire 7/0.67mm Single 100m,10500,12200
+ELC-004,Building Wire 7/0.85mm Single 100m,16500,19000
+ELC-005,Building Wire 7/1.04mm Single 100m,24000,27500
+ELC-006,Building Wire 7/0.67mm Twin 100m,21000,24000
+ELC-007,Flexible Chord 16/0.20mm 3 Core 100m,7500,8800
+ELC-008,Flexible Chord 32/0.20mm 4 Core 100m,16000,18500
+ELC-009,Telephone Cable 4x0.50mm 100m,3200,3900
+ELC-010,Fire Zero Cable 7/0.53mm Single 100m,9800,11400
+ELC-011,1 Gang 1 Way Switch,240,320
+ELC-012,2 Gang 1 Way Switch,380,490
+ELC-013,3 Gang 1 Way Switch,520,670
+ELC-014,4 Gang 1 Way Switch,680,870
+ELC-015,13A Switched Socket,480,620
+ELC-016,13A Twin Socket,780,990
+ELC-017,20A Double Pole Switch,620,790
+ELC-018,Light Dimmer,1250,1580
+ELC-019,5 Step Fan Controller,1150,1450
+ELC-020,13A Plug Top,220,300
+ELC-021,Lamp Holder,180,250
+ELC-022,Ceiling Rose,160,220
+ELC-023,PVC Insulating Tape,90,130
+ELC-024,MCB Single Pole,620,800
+ELC-025,MCB Double Pole,1450,1800
+ELC-026,MCB Three Pole,2650,3250
+ELC-027,Isolator 40A Double Pole,1650,2050
+ELC-028,RCD 40A Double Pole,4800,5800
+ELC-029,Kelani Electrical Cable,9800,11400
+ELC-030,Sierra Electrical Cable,9500,11000
+ELC-031,Orange Electric Switch,260,350
+ELC-032,Schneider MCB,950,1200
+ELC-033,SIEMENS MCB,1100,1400
+ELC-034,ANLY Electrical Relay,2400,3000
+ELC-035,Polycrome Electrical Accessory,320,430
+TLS-001,Makita Cordless Drill,26000,31000
+TLS-002,Makita Impact Drill,18500,22500
+TLS-003,Makita Angle Grinder,15500,18800
+TLS-004,Makita Rotary Hammer,42000,49500
+TLS-005,Makita Circular Saw,32000,38000
+TLS-006,Makita Power Cutter,78000,92000
+TLS-007,Bosch Rotary Hammer,38000,45000
+TLS-008,Bosch Angle Grinder,13500,16500
+TLS-009,Bosch Electric Drill,11500,14000
+TLS-010,Bosch Circular Saw,28000,33500
+TLS-011,Bosch Jigsaw,19500,23500
+TLS-012,Claw Hammer,1850,2400
+TLS-013,Screwdriver Set,2600,3300
+TLS-014,Combination Spanner Set,5800,7200
+TLS-015,Combination Pliers,1750,2250
+TLS-016,Adjustable Wrench,1950,2500
+TLS-017,Measuring Tape 5m,950,1250
+TLS-018,Spirit Level,2400,3000
+TLS-019,Drill Bit Set,4500,5600
+TLS-020,Cutting Disc,320,430
+TLS-021,Grinding Disc,380,500
+TLS-022,Solex Water Pump,18500,22500
+TLS-023,Yamaha Generator,145000,168000
+TLS-024,Karcher Pressure Washer,42000,49500
+TLS-025,Mammoty,2200,2800
+FST-001,Common Nails,480,600
+FST-002,Concrete Nails,750,950
+FST-003,Wood Screws,620,800
+FST-004,Self Tapping Screws,580,750
+FST-005,Roofing Screws,1250,1580
+FST-006,Hex Bolt M6,22,35
+FST-007,Hex Bolt M8,35,50
+FST-008,Hex Bolt M10,55,78
+FST-009,Nut M6,8,14
+FST-010,Nut M8,12,20
+FST-011,Nut M10,18,28
+FST-012,Washer M6,5,9
+FST-013,Washer M8,7,12
+FST-014,Wall Plug 6mm,180,250
+FST-015,Wall Plug 8mm,240,320
+FST-016,Anchor Bolt,95,135
+FST-017,Cutting Disc 4 inch,220,300
+FST-018,Grinding Disc 4 inch,280,380
+FST-019,Silicone Sealant,750,980
+FST-020,PTFE Thread Seal Tape,45,70
+MIS-001,Safety Helmet,950,1250
+MIS-002,Safety Gloves,220,320
+MIS-003,Safety Goggles,450,620
+MIS-004,Safety Vest,550,750
+MIS-005,Dust Mask,680,880
+MIS-006,Ear Protection,850,1100
+MIS-007,Rain Coat,1250,1600
+MIS-008,PVC Gloves,320,450
+MIS-009,Door Lock,2400,3000
+MIS-010,Padlock,850,1150
+MIS-011,Door Hinge,380,520
+MIS-012,Door Handle,1850,2400
+MIS-013,Cabinet Handle,320,450
+MIS-014,Door Stopper,280,400
+MIS-015,Silicone Sealant,750,980
+MIS-016,Construction Adhesive,850,1100
+MIS-017,Masking Tape,180,250
+MIS-018,Duct Tape,320,450
+MIS-019,Measuring Tape 3m,620,850
+MIS-020,Utility Knife,380,520
