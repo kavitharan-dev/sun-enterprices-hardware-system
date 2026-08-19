@@ -110,6 +110,7 @@ class WorkerPayrollService
             ]);
 
             $this->dailyAccounts->postWorkerPayment($payment->load(['worker', 'week']));
+            $payment->refresh();
 
             $this->logActivity(
                 'advance',

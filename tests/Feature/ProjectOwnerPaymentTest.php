@@ -28,27 +28,22 @@ class ProjectOwnerPaymentTest extends TestCase
         [$admin, $site] = $this->seedRoles();
         $project = $this->project($site, 4500000);
 
-        $this->actingAs($admin)
-            ->post(route('construction.projects.owner-payments.store', $project), [
-                'amount' => 500000,
-                'payment_date' => '2026-08-01',
-                'method' => PaymentMethod::Cash->value,
-            ])
-            ->assertRedirect()
-            ->assertSessionHas('success');
+        $this->cashierRecords([
+            'occurred_on' => '2026-08-01',
+            'type' => 'owner_payment',
+            'amount' => 500000,
+            'method' => PaymentMethod::Cash->value,
+            'project_id' => $project->id,
+        ], $admin);
 
-        $this->confirmPendingCashierRequests($admin);
-
-        $this->actingAs($admin)
-            ->post(route('construction.projects.owner-payments.store', $project), [
-                'amount' => 750000,
-                'payment_date' => '2026-08-10',
-                'method' => PaymentMethod::BankTransfer->value,
-                'reference' => 'SLIP-102',
-            ])
-            ->assertRedirect();
-
-        $this->confirmPendingCashierRequests($admin);
+        $this->cashierRecords([
+            'occurred_on' => '2026-08-10',
+            'type' => 'owner_payment',
+            'amount' => 750000,
+            'method' => PaymentMethod::BankTransfer->value,
+            'project_id' => $project->id,
+            'reference_no' => 'SLIP-102',
+        ], $admin);
 
         $project = $project->fresh();
 
@@ -67,21 +62,21 @@ class ProjectOwnerPaymentTest extends TestCase
         [, $site] = $this->seedRoles();
         $project = $this->project($site, 4500000);
 
-        $this->actingAs($site)
-            ->post(route('construction.projects.owner-payments.store', $project), [
-                'amount' => 500000,
-                'payment_date' => '2026-08-01',
-                'method' => PaymentMethod::Cash->value,
-            ]);
+        $this->cashierRecords([
+            'occurred_on' => '2026-08-01',
+            'type' => 'owner_payment',
+            'amount' => 500000,
+            'method' => PaymentMethod::Cash->value,
+            'project_id' => $project->id,
+        ]);
 
-        $this->actingAs($site)
-            ->post(route('construction.projects.owner-payments.store', $project), [
-                'amount' => 750000,
-                'payment_date' => '2026-08-10',
-                'method' => PaymentMethod::Cash->value,
-            ]);
-
-        $this->confirmPendingCashierRequests();
+        $this->cashierRecords([
+            'occurred_on' => '2026-08-10',
+            'type' => 'owner_payment',
+            'amount' => 750000,
+            'method' => PaymentMethod::Cash->value,
+            'project_id' => $project->id,
+        ]);
 
         ProjectExpense::query()->create([
             'project_id' => $project->id,
@@ -106,10 +101,12 @@ class ProjectOwnerPaymentTest extends TestCase
         [, $site] = $this->seedRoles();
         $project = $this->project($site, 4500000);
 
-        $this->actingAs($site)->post(route('construction.projects.owner-payments.store', $project), [
+        $this->cashierRecords([
+            'occurred_on' => '2026-08-01',
+            'type' => 'owner_payment',
             'amount' => 1250000,
-            'payment_date' => '2026-08-01',
             'method' => PaymentMethod::Cash->value,
+            'project_id' => $project->id,
         ]);
 
         ProjectExpense::query()->create([
@@ -121,13 +118,13 @@ class ProjectOwnerPaymentTest extends TestCase
             'created_by' => $site->id,
         ]);
 
-        $this->actingAs($site)->post(route('construction.projects.owner-payments.store', $project), [
+        $this->cashierRecords([
+            'occurred_on' => '2026-08-20',
+            'type' => 'owner_payment',
             'amount' => 500000,
-            'payment_date' => '2026-08-20',
             'method' => PaymentMethod::Cash->value,
+            'project_id' => $project->id,
         ]);
-
-        $this->confirmPendingCashierRequests();
 
         $project = $project->fresh();
 
@@ -141,13 +138,13 @@ class ProjectOwnerPaymentTest extends TestCase
         [$admin, $site] = $this->seedRoles();
         $project = $this->project($site, 4500000);
 
-        $this->actingAs($admin)->post(route('construction.projects.owner-payments.store', $project), [
+        $this->cashierRecords([
+            'occurred_on' => now()->toDateString(),
+            'type' => 'owner_payment',
             'amount' => 1250000,
-            'payment_date' => now()->toDateString(),
             'method' => PaymentMethod::Cash->value,
-        ]);
-
-        $this->confirmPendingCashierRequests($admin);
+            'project_id' => $project->id,
+        ], $admin);
 
         ProjectExpense::query()->create([
             'project_id' => $project->id,

@@ -41,7 +41,7 @@ class SaleRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
-            if (! $this->boolean('complete')) {
+            if (! $this->boolean('complete') || ! $this->user()?->canConfirmTill()) {
                 return;
             }
 

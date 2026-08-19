@@ -34,11 +34,11 @@ class SalePolicy
 
     public function complete(User $user, Sale $sale): bool
     {
-        return $user->canHandleSales() && $sale->isDraft();
+        return $user->canConfirmTill() && $sale->isDraft();
     }
 
     public function pay(User $user, Sale $sale): bool
     {
-        return $user->canHandleSales() && $sale->isCompleted();
+        return $user->canConfirmTill() && $sale->isCompleted();
     }
 }

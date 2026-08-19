@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Enums\CashierRequestStatus;
 use App\Enums\DailyAccountType;
 use App\Enums\ExpenseCategory;
 use App\Enums\PaymentMethod;
@@ -46,29 +45,29 @@ class CashierTillTest extends TestCase
                 'payment_method' => 'cash',
                 'payment_amount' => 4700,
             ])
-            ->assertRedirect(route('store.sales.show', $sale));
+            ->assertForbidden();
 
         $this->assertTrue($sale->fresh()->isDraft());
         $this->assertSame(100.0, (float) $product->fresh()->stock_quantity);
         $this->assertSame(0, DailyAccountEntry::query()->count());
 
-        $pending = CashierRequest::query()->pending()->first();
-        $this->assertNotNull($pending);
-        $this->assertSame(4700.0, (float) $pending->amount);
-
         $this->actingAs($store)
-            ->post(route('cashier.requests.confirm', $pending), [
-                'payment_date' => now()->toDateString(),
+            ->post(route('cashier.daily-accounts.store'), [
+                'occurred_on' => now()->toDateString(),
+                'type' => DailyAccountType::Sale->value,
+                'sale_id' => $sale->id,
+                'amount' => 4700,
                 'method' => PaymentMethod::Cash->value,
             ])
             ->assertForbidden();
 
-        $this->actingAs($cashier)
-            ->post(route('cashier.requests.confirm', $pending), [
-                'payment_date' => now()->toDateString(),
-                'method' => PaymentMethod::Cash->value,
-            ])
-            ->assertRedirect();
+        $this->cashierRecords([
+            'occurred_on' => now()->toDateString(),
+            'type' => DailyAccountType::Sale->value,
+            'sale_id' => $sale->id,
+            'amount' => 4700,
+            'method' => PaymentMethod::Cash->value,
+        ], $cashier);
 
         $this->assertSame(SaleStatus::Completed, $sale->fresh()->status);
         $this->assertSame(98.0, (float) $product->fresh()->stock_quantity);
@@ -76,7 +75,10 @@ class CashierTillTest extends TestCase
             'type' => DailyAccountType::Sale->value,
             'income' => 4700,
         ]);
-        $this->assertSame(CashierRequestStatus::Confirmed, $pending->fresh()->status);
+        $this->assertSame(
+            DailyAccountEntry::query()->value('id'),
+            $sale->fresh()->payments()->value('daily_account_entry_id'),
+        );
     }
 
     public function test_cashier_completing_a_sale_records_money_immediately(): void
@@ -129,16 +131,14 @@ class CashierTillTest extends TestCase
 
         $this->assertTrue($purchase->fresh()->isDraft());
         $this->assertSame(100.0, (float) $product->fresh()->stock_quantity);
+        $this->assertSame(0, DailyAccountEntry::query()->count());
 
-        $pending = CashierRequest::query()->pending()->first();
-        $this->assertSame(20000.0, (float) $pending->amount);
-
-        $this->actingAs($cashier)
-            ->post(route('cashier.requests.confirm', $pending), [
-                'payment_date' => now()->toDateString(),
-                'method' => PaymentMethod::Cash->value,
-            ])
-            ->assertRedirect();
+        $this->cashierRecords([
+            'occurred_on' => now()->toDateString(),
+            'type' => DailyAccountType::Purchase->value,
+            'purchase_id' => $purchase->id,
+            'method' => PaymentMethod::Cash->value,
+        ], $cashier);
 
         $this->assertTrue($purchase->fresh()->isCompleted());
         $this->assertSame(110.0, (float) $product->fresh()->stock_quantity);
@@ -159,13 +159,20 @@ class CashierTillTest extends TestCase
                 'payment_date' => now()->toDateString(),
                 'method' => PaymentMethod::Cash->value,
             ])
-            ->assertRedirect();
+            ->assertRedirect()
+            ->assertSessionHas('error');
 
         $this->assertSame(0.0, $project->fresh()->totalReceived());
         $this->assertSame(4500000.0, $project->fresh()->remainingToReceive());
         $this->assertSame(0, DailyAccountEntry::query()->count());
 
-        $this->confirmPendingCashierRequests($admin);
+        $this->cashierRecords([
+            'occurred_on' => now()->toDateString(),
+            'type' => DailyAccountType::OwnerPayment->value,
+            'amount' => 500000,
+            'method' => PaymentMethod::Cash->value,
+            'project_id' => $project->id,
+        ], $admin);
 
         $this->assertSame(500000.0, $project->fresh()->totalReceived());
         $this->assertSame(4000000.0, $project->fresh()->remainingToReceive());
@@ -176,10 +183,8 @@ class CashierTillTest extends TestCase
 
         $entry = DailyAccountEntry::query()->first();
         $ownerPayment = $project->fresh()->ownerPayments()->first();
-        $request = CashierRequest::query()->first();
 
         $this->assertSame($entry->id, $ownerPayment->daily_account_entry_id);
-        $this->assertSame($request->id, $entry->cashier_request_id);
         $this->assertSame($entry->transaction_no, $ownerPayment->fresh()->transactionNo());
 
         $this->actingAs($admin)
@@ -200,11 +205,19 @@ class CashierTillTest extends TestCase
                 'expense_date' => now()->toDateString(),
                 'description' => 'Lorry hire',
             ])
-            ->assertRedirect();
+            ->assertRedirect()
+            ->assertSessionHas('error');
 
         $this->assertSame(0.0, $project->fresh()->totalSpent());
 
-        $this->confirmPendingCashierRequests($admin);
+        $this->cashierRecords([
+            'occurred_on' => now()->toDateString(),
+            'type' => DailyAccountType::ProjectExpense->value,
+            'amount' => 4000,
+            'project_id' => $project->id,
+            'expense_category' => ExpenseCategory::Transport->value,
+            'description' => 'Lorry hire',
+        ], $admin);
 
         $this->assertSame(4000.0, $project->fresh()->totalSpent());
         $this->assertDatabaseHas('daily_account_entries', [
@@ -213,35 +226,20 @@ class CashierTillTest extends TestCase
         ]);
     }
 
-    public function test_daily_accounts_lists_pending_requests_for_the_cashier(): void
+    public function test_daily_accounts_is_where_the_cashier_records_money(): void
     {
-        [$store, $cashier, $product] = $this->shopUsers();
-
-        $sale = app(SaleService::class)->create([
-            'customer_id' => null,
-            'walk_in_name' => 'Queue',
-            'sale_date' => now()->toDateString(),
-            'discount' => 0,
-            'tax' => 0,
-        ], [
-            ['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 2350],
-        ], $store->id);
-
-        $this->actingAs($store)->post(route('store.sales.complete', $sale), [
-            'payment_method' => 'cash',
-            'payment_amount' => 2350,
-        ]);
+        [$store, $cashier] = $this->shopUsers();
 
         $this->actingAs($cashier)
             ->get(route('cashier.daily-accounts.index'))
             ->assertOk()
-            ->assertSee('Awaiting cashier')
-            ->assertSee('Hardware sale payment');
+            ->assertSee('Record money')
+            ->assertSee('Site owner payment');
 
         $this->actingAs($store)
             ->get(route('cashier.daily-accounts.index'))
             ->assertOk()
-            ->assertSee('Waiting for cashier');
+            ->assertSee('Only the cashier');
     }
 
     /**

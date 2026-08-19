@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div>
             <h2 class="text-xl font-semibold text-slate-800">Daily accounts</h2>
-            <p class="text-sm text-slate-500">Each money movement is one transaction. Confirm it here once; sales, stock, workers, and projects show the same transaction ID.</p>
+            <p class="text-sm text-slate-500">The cashier records money once here. Daily Accounts is the cash book; sales, stock, workers, and projects update from the same transaction ID.</p>
         </div>
     </x-slot>
 
@@ -36,8 +36,8 @@
         @if ($pending->isNotEmpty())
             <div class="overflow-hidden rounded-xl border border-amber-200 bg-white shadow-sm">
                 <div class="border-b border-amber-100 bg-amber-50 px-5 py-3">
-                    <p class="font-semibold text-amber-900">Awaiting cashier ({{ $pending->count() }})</p>
-                    <p class="text-xs text-amber-800">These are not in Daily Accounts yet. Confirm when you actually receive or pay the money.</p>
+                    <p class="font-semibold text-amber-900">Older requests still waiting ({{ $pending->count() }})</p>
+                    <p class="text-xs text-amber-800">New money is recorded in the form below. Confirm these leftover requests if they were sent before that change.</p>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
@@ -243,11 +243,12 @@
                 <x-primary-button>Save opening</x-primary-button>
             </form>
 
-            <form method="POST" action="{{ route('cashier.daily-accounts.store') }}" class="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            @if ($canRecord)
+            <form method="POST" action="{{ route('cashier.daily-accounts.store') }}" class="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-1" x-data="{ type: '{{ old('type', 'owner_payment') }}' }">
                 @csrf
                 <div>
-                    <p class="font-semibold text-slate-800">Other income or expense</p>
-                    <p class="mt-1 text-sm text-slate-500">Use this only when the money did not come from sales, purchases, wages, or a project page. Those post here automatically.</p>
+                    <p class="font-semibold text-slate-800">Record money</p>
+                    <p class="mt-1 text-sm text-slate-500">Enter the cash, card, or bank movement once. Daily Accounts posts it and the related sale, purchase, worker, or project updates automatically.</p>
                 </div>
                 <div class="grid gap-3 sm:grid-cols-2">
                     <div>
@@ -255,24 +256,74 @@
                         <x-text-input id="occurred_on" name="occurred_on" type="date" class="mt-1 block w-full" :value="old('occurred_on', $from)" required />
                     </div>
                     <div>
-                        <x-input-label for="manual_amount" value="Amount (Rs.)" />
-                        <x-text-input id="manual_amount" name="amount" type="number" step="0.01" min="0.01" class="mt-1 block w-full" :value="old('amount')" required />
-                    </div>
-                    <div>
-                        <x-input-label for="manual_type" value="Type" />
-                        <select id="manual_type" name="type" class="mt-1 block w-full rounded-md border-gray-300 text-sm" required>
-                            <option value="other_income" @selected(old('type') === 'other_income')>Other income</option>
-                            <option value="other_expense" @selected(old('type', 'other_expense') === 'other_expense')>Other expense</option>
+                        <x-input-label for="manual_type" value="What is this money?" />
+                        <select id="manual_type" name="type" x-model="type" class="mt-1 block w-full rounded-md border-gray-300 text-sm" required>
+                            @foreach ($types as $type)
+                                <option value="{{ $type->value }}">{{ $type->label() }}</option>
+                            @endforeach
                         </select>
                     </div>
-                    <div>
+                    <div x-show="type === 'sale'" x-cloak class="sm:col-span-2">
+                        <x-input-label for="sale_id" value="Sale" />
+                        <select id="sale_id" name="sale_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                            <option value="">Select a draft or unpaid sale</option>
+                            @foreach ($openSales as $sale)
+                                <option value="{{ $sale->id }}" @selected((string) old('sale_id') === (string) $sale->id)>
+                                    {{ $sale->invoice_no ?: 'Draft' }} — {{ $sale->customerName() }} — Rs. {{ number_format((float) ($sale->balance > 0 ? $sale->balance : $sale->total), 2) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div x-show="type === 'purchase'" x-cloak class="sm:col-span-2">
+                        <x-input-label for="purchase_id" value="Purchase" />
+                        <select id="purchase_id" name="purchase_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                            <option value="">Select a draft purchase to pay</option>
+                            @foreach ($draftPurchases as $purchase)
+                                <option value="{{ $purchase->id }}" @selected((string) old('purchase_id') === (string) $purchase->id)>
+                                    {{ $purchase->reference_no }} — {{ $purchase->supplier?->name }} — Rs. {{ number_format((float) $purchase->total, 2) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div x-show="['owner_payment','project_expense','worker_advance','worker_settlement'].includes(type)" x-cloak>
+                        <x-input-label for="manual_project" value="Project" />
+                        <select id="manual_project" name="project_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                            <option value="">{{ in_array(old('type'), ['owner_payment', 'project_expense'], true) ? 'Select project' : 'Optional' }}</option>
+                            @foreach ($projects as $project)
+                                <option value="{{ $project->id }}" @selected((string) old('project_id') === (string) $project->id)>{{ $project->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div x-show="['worker_advance','worker_settlement','other_income','other_expense'].includes(type)" x-cloak>
+                        <x-input-label for="manual_worker" value="Worker" />
+                        <select id="manual_worker" name="worker_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                            <option value="">{{ str_starts_with(old('type', ''), 'worker') ? 'Select worker' : 'Optional' }}</option>
+                            @foreach ($workers as $worker)
+                                <option value="{{ $worker->id }}" @selected((string) old('worker_id') === (string) $worker->id)>{{ $worker->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div x-show="type === 'project_expense'" x-cloak>
+                        <x-input-label for="expense_category" value="Expense category" />
+                        <select id="expense_category" name="expense_category" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                            <option value="">Category</option>
+                            @foreach ($expenseCategories as $category)
+                                <option value="{{ $category->value }}" @selected(old('expense_category') === $category->value)>{{ $category->label() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div x-show="type === 'other_income' || type === 'other_expense'" x-cloak>
                         <x-input-label for="manual_category" value="Category" />
-                        <select id="manual_category" name="category" class="mt-1 block w-full rounded-md border-gray-300 text-sm" required>
+                        <select id="manual_category" name="category" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
                             <option value="other_income">Other income</option>
                             <option value="other">Other</option>
                             <option value="transport">Transport</option>
                             <option value="labour">Labour</option>
                         </select>
+                    </div>
+                    <div x-show="type !== 'purchase'">
+                        <x-input-label for="manual_amount" value="Amount (Rs.)" />
+                        <x-text-input id="manual_amount" name="amount" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('amount')" />
                     </div>
                     <div>
                         <x-input-label for="manual_method" value="Method" />
@@ -283,34 +334,31 @@
                         </select>
                     </div>
                     <div>
-                        <x-input-label for="manual_reference" value="Reference" />
+                        <x-input-label for="manual_reference" value="Receipt / reference" />
                         <x-text-input id="manual_reference" name="reference_no" class="mt-1 block w-full" :value="old('reference_no')" placeholder="Slip / voucher" />
                     </div>
+                    <div x-show="type === 'worker_advance'" x-cloak class="sm:col-span-2">
+                        <label class="inline-flex items-center gap-2 text-sm">
+                            <input type="checkbox" name="deduct_from_week" value="1" class="rounded border-gray-300" @checked(old('deduct_from_week'))>
+                            Deduct this advance from the current week salary
+                        </label>
+                    </div>
+                    <div x-show="type === 'worker_settlement'" x-cloak>
+                        <x-input-label for="debt_deducted" value="Recover worker debt (Rs.)" />
+                        <x-text-input id="debt_deducted" name="debt_deducted" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('debt_deducted', 0)" />
+                    </div>
                     <div class="sm:col-span-2">
-                        <x-input-label for="manual_description" value="Description" />
-                        <x-text-input id="manual_description" name="description" class="mt-1 block w-full" :value="old('description')" required />
-                    </div>
-                    <div>
-                        <x-input-label for="manual_project" value="Project (optional)" />
-                        <select id="manual_project" name="project_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                            <option value="">—</option>
-                            @foreach ($projects as $project)
-                                <option value="{{ $project->id }}">{{ $project->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <x-input-label for="manual_worker" value="Worker (optional)" />
-                        <select id="manual_worker" name="worker_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                            <option value="">—</option>
-                            @foreach ($workers as $worker)
-                                <option value="{{ $worker->id }}">{{ $worker->name }}</option>
-                            @endforeach
-                        </select>
+                        <x-input-label for="manual_description" value="Notes" />
+                        <x-text-input id="manual_description" name="description" class="mt-1 block w-full" :value="old('description')" placeholder="Optional except for other income, other expense, and site expense" />
                     </div>
                 </div>
-                <x-primary-button>Add to daily accounts</x-primary-button>
+                <x-primary-button>Record in Daily Accounts</x-primary-button>
             </form>
+            @else
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
+                You can view this cash book. Only the cashier (or admin covering the till) records money here.
+            </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

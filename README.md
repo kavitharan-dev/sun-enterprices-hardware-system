@@ -149,9 +149,9 @@ never run that seeder on a live database.
 
 The cashier page at `/cashier/daily-accounts` is the company cash book.
 
-- Sales, purchases, worker advances/wages, site owner receipts, and cash site expenses are requested from the related page, then confirmed by the cashier (or admin covering the till) on Daily Accounts
-- Confirming posts **one** Daily Accounts transaction (`TXN-000123`). Sales, purchases, worker payments, owner receipts, and cash site expenses store that same ID so the amount is never typed twice
-- Store managers and site managers can create the request; they cannot confirm money
+- The cashier (or admin covering the till) **records each cash movement once on Daily Accounts**
+- That creates one transaction (`TXN-000123`) and updates sales, stock, worker paid totals, owner receipts, and cash site expenses from the same row
+- Other pages do not send payment requests and do not type the same amount again
 - Opening + income − expenses = closing for the day
 - Project budget remaining stays on the project page and is not mixed into this till balance
 - Credit sales do not post until money is actually received
@@ -166,7 +166,7 @@ Paid every Saturday. Each worker has a weekly salary; the pay week runs Sunday t
   - **Do not deduct** — the worker still gets the full salary and the amount becomes **worker debt**
 - Debt carries forward. At any later settlement you choose how much of it to recover, or none
 - Settling a week posts the wages as a labour expense, split across the sites on that week's sheet
-- Site managers fill the work sheet; admin or the cashier sends the payment to Daily Accounts (admin may confirm when covering the till)
+- Site managers fill the work sheet; the cashier records advances and Saturday wages on Daily Accounts
 - A settled week is locked
 
 ## Production readiness (added on existing app)

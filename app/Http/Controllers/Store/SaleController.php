@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Store;
 
-use App\Enums\CashierRequestType;
 use App\Enums\PaymentMethod;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Store\CompleteSaleRequest;
@@ -11,7 +10,6 @@ use App\Http\Requests\Store\SaleRequest;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
-use App\Services\CashierRequestService;
 use App\Services\InvoiceService;
 use App\Services\SaleService;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +23,6 @@ class SaleController extends Controller
     public function __construct(
         private readonly SaleService $saleService,
         private readonly InvoiceService $invoices,
-        private readonly CashierRequestService $cashier,
     ) {}
 
     public function index(Request $request): View
@@ -68,6 +65,11 @@ class SaleController extends Controller
         );
 
         if ($request->boolean('complete')) {
+            if (! $request->user()->canConfirmTill()) {
+                return redirect()->route('store.sales.show', $sale)
+                    ->with('success', 'Draft sale saved. The cashier records the payment once on Daily Accounts.');
+            }
+
             try {
                 return $this->takeSalePayment(
                     $sale,
@@ -91,9 +93,8 @@ class SaleController extends Controller
         $this->authorize('view', $sale);
 
         $sale->load(['customer', 'creator', 'items.product.unit', 'payments.receiver', 'payments.financialTransaction']);
-        $pendingTill = $this->cashier->pendingFor(CashierRequestType::SalePayment, $sale);
 
-        return view('store.sales.show', compact('sale', 'pendingTill'));
+        return view('store.sales.show', compact('sale'));
     }
 
     public function edit(Sale $sale): View
@@ -220,6 +221,11 @@ class SaleController extends Controller
 
     private function takeSalePayment(Sale $sale, array $payment, $user): RedirectResponse
     {
+        if (! $user->canConfirmTill()) {
+            return redirect()->route('store.sales.show', $sale)
+                ->with('error', 'The cashier records this payment on Daily Accounts.');
+        }
+
         $method = (string) ($payment['method'] ?? 'cash');
 
         if ($method === PaymentMethod::Credit->value) {
@@ -228,30 +234,23 @@ class SaleController extends Controller
             return $this->redirectAfterComplete($sale->fresh());
         }
 
-        $queued = $this->cashier->submit(
-            CashierRequestType::SalePayment,
-            [
+        if ($sale->isDraft()) {
+            $this->saleService->complete($sale, $payment, $user->id);
+        } else {
+            $this->saleService->recordPayment($sale, [
                 'amount' => $payment['amount'] ?? 0,
-                'method' => $method,
+                'payment_method' => $method,
                 'payment_date' => $payment['payment_date'] ?? now()->toDateString(),
                 'reference' => $payment['reference'] ?? null,
                 'notes' => $payment['notes'] ?? null,
-                'description' => 'Sale for '.$sale->customerName().' — Rs. '.number_format((float) $sale->total, 2),
-            ],
-            $user,
-            $sale,
-        );
-
-        if ($queued->isPending()) {
-            return redirect()->route('store.sales.show', $sale)
-                ->with('success', 'Sent to the cashier. Stock and daily accounts update when the cashier confirms the payment.');
+            ], $user->id);
         }
 
         if ($sale->fresh()->isCompleted()) {
             return $this->redirectAfterComplete($sale);
         }
 
-        return back()->with('success', 'Payment confirmed by the cashier.');
+        return back()->with('success', 'Payment recorded in Daily Accounts.');
     }
 
     private function redirectAfterComplete(Sale $sale): RedirectResponse

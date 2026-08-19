@@ -149,9 +149,11 @@
         <div class="flex flex-wrap gap-3">
             <x-primary-button>Save as draft</x-primary-button>
             @unless (isset($sale))
-                <button type="submit" name="complete" value="1" class="btn btn-success">
-                    Complete, print bill &amp; next sale
-                </button>
+                @if (auth()->user()->canConfirmTill())
+                    <button type="submit" name="complete" value="1" class="btn btn-success">
+                        Complete, print bill &amp; next sale
+                    </button>
+                @endif
             @endunless
             <a href="{{ route('store.sales.index') }}" class="btn btn-secondary">Cancel</a>
         </div>

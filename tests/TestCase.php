@@ -9,6 +9,16 @@ use Spatie\Permission\Models\Role;
 
 abstract class TestCase extends BaseTestCase
 {
+    protected function cashierRecords(array $payload, ?User $as = null): void
+    {
+        $confirmer = $as ?? $this->tillConfirmer();
+
+        $this->actingAs($confirmer)
+            ->post(route('cashier.daily-accounts.store'), $payload)
+            ->assertRedirect()
+            ->assertSessionHas('success');
+    }
+
     protected function confirmPendingCashierRequests(?User $as = null): void
     {
         $confirmer = $as ?? $this->tillConfirmer();

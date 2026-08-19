@@ -8,7 +8,6 @@ use App\Enums\ProjectStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Construction\AssignWorkerRequest;
 use App\Http\Requests\Construction\ProjectRequest;
-use App\Models\CashierRequest;
 use App\Models\Customer;
 use App\Models\MaterialIssue;
 use App\Models\MaterialIssueItem;
@@ -108,11 +107,6 @@ class ProjectController extends Controller
             PaymentMethod::cases(),
             fn (PaymentMethod $method) => $method !== PaymentMethod::Credit,
         ));
-        $pendingCashier = CashierRequest::query()
-            ->pending()
-            ->where('project_id', $project->id)
-            ->latest()
-            ->get();
 
         return view('construction.projects.show', compact(
             'project',
@@ -123,7 +117,6 @@ class ProjectController extends Controller
             'cashBalance',
             'manualCategories',
             'paymentMethods',
-            'pendingCashier',
         ));
     }
 

@@ -21,18 +21,6 @@
     @endphp
 
     <div class="space-y-6">
-        @if ($pendingCashier->isNotEmpty())
-            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                <p class="font-semibold">Awaiting cashier</p>
-                <ul class="mt-2 list-disc space-y-1 pl-5">
-                    @foreach ($pendingCashier as $item)
-                        <li>{{ $item->type->label() }} — Rs. {{ number_format((float) $item->amount, 2) }}</li>
-                    @endforeach
-                </ul>
-                <p class="mt-2 text-xs">Worker paid totals update after the cashier confirms on Daily Accounts.</p>
-            </div>
-        @endif
-
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase text-slate-500">Weekly salary</p>
@@ -260,7 +248,14 @@
                     </form>
                 </div>
             @else
-                <div class="grid gap-6 lg:grid-cols-2">
+                <div class="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+                    <p class="font-semibold">Record wages on Daily Accounts</p>
+                    <p class="mt-1">The cashier records the advance or Saturday payout once. Worker paid totals update from that transaction.</p>
+                    <p class="mt-2">Deduct from current week salary? Choose yes, or Added to worker debt. Recover debt now (Rs.) is entered on Daily Accounts.</p>
+                </div>
+            @endif
+            {{-- money forms removed: cashier records on Daily Accounts --}}
+            @if (false)
                     <form method="POST" action="{{ route('construction.workers.payroll.advances.store', $worker) }}" class="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                         @csrf
                         <div>

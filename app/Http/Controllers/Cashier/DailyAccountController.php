@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Cashier;
 
 use App\Enums\DailyAccountCategory;
 use App\Enums\DailyAccountType;
+use App\Enums\ExpenseCategory;
 use App\Enums\PaymentMethod;
+use App\Enums\PurchaseStatus;
+use App\Enums\SaleStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cashier\ConfirmCashierRequestRequest;
 use App\Http\Requests\Cashier\DailyAccountEntryRequest;
@@ -12,8 +15,11 @@ use App\Http\Requests\Cashier\DailyAccountOpeningRequest;
 use App\Models\CashierRequest;
 use App\Models\DailyAccountEntry;
 use App\Models\Project;
+use App\Models\Purchase;
+use App\Models\Sale;
 use App\Models\Worker;
 use App\Services\CashierRequestService;
+use App\Services\CashierTransactionService;
 use App\Services\DailyAccountService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,6 +30,7 @@ class DailyAccountController extends Controller
 {
     public function __construct(
         private readonly DailyAccountService $accounts,
+        private readonly CashierTransactionService $transactions,
         private readonly CashierRequestService $cashierRequests,
     ) {}
 
@@ -71,6 +78,23 @@ class DailyAccountController extends Controller
             ->latest()
             ->get();
 
+        $openSales = Sale::query()
+            ->with('customer')
+            ->where(function ($query) {
+                $query->where('status', SaleStatus::Draft)
+                    ->orWhere('balance', '>', 0);
+            })
+            ->latest('id')
+            ->limit(80)
+            ->get(['id', 'invoice_no', 'walk_in_name', 'customer_id', 'total', 'balance', 'status']);
+
+        $draftPurchases = Purchase::query()
+            ->with('supplier')
+            ->where('status', PurchaseStatus::Draft)
+            ->latest('id')
+            ->limit(80)
+            ->get(['id', 'reference_no', 'supplier_id', 'total', 'status']);
+
         return view('cashier.daily-accounts', [
             'filters' => $filters,
             'day' => $day,
@@ -81,6 +105,9 @@ class DailyAccountController extends Controller
             'filteredExpense' => $filteredExpense,
             'projects' => Project::query()->orderBy('name')->get(['id', 'name']),
             'workers' => Worker::query()->orderBy('name')->get(['id', 'name']),
+            'openSales' => $openSales,
+            'draftPurchases' => $draftPurchases,
+            'expenseCategories' => ExpenseCategory::manualCases(),
             'types' => DailyAccountType::cases(),
             'categories' => DailyAccountCategory::cases(),
             'methods' => array_values(array_filter(
@@ -88,6 +115,7 @@ class DailyAccountController extends Controller
                 fn (PaymentMethod $method) => $method !== PaymentMethod::Credit,
             )),
             'pending' => $pending,
+            'canRecord' => $request->user()->canConfirmTill(),
         ]);
     }
 
@@ -99,7 +127,7 @@ class DailyAccountController extends Controller
             return back()->with('error', $exception->getMessage());
         }
 
-        return back()->with('success', 'Payment confirmed. Daily accounts and the related page have been updated.');
+        return back()->with('success', 'Payment recorded. Daily accounts and the related page have been updated.');
     }
 
     public function reject(Request $request, CashierRequest $cashierRequest): RedirectResponse
@@ -117,36 +145,29 @@ class DailyAccountController extends Controller
 
     public function store(DailyAccountEntryRequest $request): RedirectResponse
     {
-        $data = $request->validated();
-        $type = DailyAccountType::from($data['type']);
-        $amount = round((float) $data['amount'], 2);
+        try {
+            $entry = $this->transactions->record(
+                DailyAccountType::from($request->validated('type')),
+                $request->validated(),
+                $request->user(),
+            );
+        } catch (RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage())->withInput();
+        }
 
-        $this->accounts->post([
-            'occurred_on' => $data['occurred_on'],
-            'type' => $type,
-            'category' => $data['category'],
-            'description' => $data['description'],
-            'project_id' => $data['project_id'] ?? null,
-            'worker_id' => $data['worker_id'] ?? null,
-            'reference_no' => $data['reference_no'] ?? null,
-            'method' => $data['method'] ?? null,
-            'income' => $type->isIncome() ? $amount : 0,
-            'expense' => $type->isIncome() ? 0 : $amount,
-            'is_manual' => true,
-            'recorded_by' => $request->user()->id,
-        ]);
+        $date = $entry->occurred_on->toDateString();
 
         return redirect()
-            ->route('cashier.daily-accounts.index', ['from' => $data['occurred_on'], 'to' => $data['occurred_on']])
-            ->with('success', 'Transaction recorded in daily accounts.');
+            ->route('cashier.daily-accounts.index', ['from' => $date, 'to' => $date])
+            ->with('success', "Recorded {$entry->transaction_no}. Related pages have been updated from this transaction.");
     }
 
     public function destroy(Request $request, DailyAccountEntry $entry): RedirectResponse
     {
-        abort_unless($request->user()?->canManageDailyAccounts(), 403);
+        abort_unless($request->user()?->canConfirmTill(), 403);
 
         if (! $entry->is_manual) {
-            return back()->with('error', 'This row was posted from another page. Reverse it there instead of deleting it here.');
+            return back()->with('error', 'This row is the cash book copy of a cashier transaction. Reverse the sale, purchase, wage, or project payment instead of deleting it here.');
         }
 
         $date = $entry->occurred_on->toDateString();

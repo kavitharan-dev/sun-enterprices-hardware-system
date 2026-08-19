@@ -2,17 +2,14 @@
 
 namespace App\Http\Controllers\Construction;
 
-use App\Enums\CashierRequestType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Construction\SettleWorkerWeekRequest;
 use App\Http\Requests\Construction\WorkerAdvanceRequest;
 use App\Http\Requests\Construction\WorkerWorkDayRequest;
-use App\Models\CashierRequest;
 use App\Models\Project;
 use App\Models\Worker;
 use App\Models\WorkerPayrollWeek;
 use App\Models\WorkerWorkDay;
-use App\Services\CashierRequestService;
 use App\Services\WorkerPayrollService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +21,6 @@ class WorkerPayrollController extends Controller
 {
     public function __construct(
         private readonly WorkerPayrollService $payroll,
-        private readonly CashierRequestService $cashier,
     ) {}
 
     /**
@@ -88,67 +84,21 @@ class WorkerPayrollController extends Controller
             'previousWeek' => $week->week_start->copy()->subWeek()->toDateString(),
             'nextWeek' => $week->week_start->copy()->addWeek()->toDateString(),
             'history' => $worker->payrollWeeks()->with('payments')->limit(12)->get(),
-            'pendingCashier' => CashierRequest::query()
-                ->pending()
-                ->where('worker_id', $worker->id)
-                ->latest()
-                ->get(),
         ]);
     }
 
     public function storeAdvance(WorkerAdvanceRequest $request, Worker $worker): RedirectResponse
     {
-        try {
-            $queued = $this->cashier->submit(
-                CashierRequestType::WorkerAdvance,
-                [
-                    ...$request->validated(),
-                    'worker_id' => $worker->id,
-                    'description' => 'Advance to '.$worker->name
-                        .' — Rs. '.number_format((float) $request->input('amount'), 2),
-                ],
-                $request->user(),
-            );
-        } catch (RuntimeException $exception) {
-            return back()->with('error', $exception->getMessage())->withInput();
-        }
-
-        if ($queued->isPending()) {
-            return $this->backToWeek($worker, $request->input('payment_date'))
-                ->with('success', 'Sent to the cashier. Worker totals update when the cashier pays.');
-        }
-
         return $this->backToWeek($worker, $request->input('payment_date'))
-            ->with('success', $request->boolean('deduct_from_week')
-                ? 'Advance paid and deducted from this week.'
-                : 'Advance paid and added to worker debt.');
+            ->with('error', 'The cashier records advances on Daily Accounts. Worker totals update from that transaction.');
     }
 
     public function settle(SettleWorkerWeekRequest $request, Worker $worker, WorkerPayrollWeek $week): RedirectResponse
     {
         abort_unless($week->worker_id === $worker->id, 404);
 
-        try {
-            $queued = $this->cashier->submit(
-                CashierRequestType::WorkerSettlement,
-                [
-                    ...$request->validated(),
-                    'worker_id' => $worker->id,
-                    'description' => 'Saturday wages for '.$worker->name.' ('.$week->label().')',
-                ],
-                $request->user(),
-                $week,
-            );
-        } catch (RuntimeException $exception) {
-            return back()->with('error', $exception->getMessage())->withInput();
-        }
-
-        if ($queued->isPending()) {
-            return $this->backToWeek($worker, $week->week_start)
-                ->with('success', 'Sent to the cashier. The week settles when the cashier pays.');
-        }
-
-        return $this->backToWeek($worker, $week->week_start)->with('success', 'Week settled.');
+        return $this->backToWeek($worker, $week->week_start)
+            ->with('error', 'The cashier records Saturday wages on Daily Accounts. This week updates from that transaction.');
     }
 
     public function reopen(Request $request, Worker $worker, WorkerPayrollWeek $week): RedirectResponse

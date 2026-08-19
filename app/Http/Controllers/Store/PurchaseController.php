@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers\Store;
 
-use App\Enums\CashierRequestType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Store\PurchaseRequest;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\Supplier;
-use App\Services\CashierRequestService;
 use App\Services\PurchaseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +17,6 @@ class PurchaseController extends Controller
 {
     public function __construct(
         private readonly PurchaseService $purchaseService,
-        private readonly CashierRequestService $cashier,
     ) {}
 
     public function index(Request $request): View
@@ -61,7 +58,8 @@ class PurchaseController extends Controller
         );
 
         if ($request->boolean('complete')) {
-            return $this->sendPurchaseToCashier($purchase->load('supplier'), $request->user());
+            return redirect()->route('store.purchases.show', $purchase)
+                ->with('success', 'Draft purchase saved. The cashier records the payment once on Daily Accounts, then stock updates.');
         }
 
         return redirect()->route('store.purchases.show', $purchase)
@@ -73,9 +71,8 @@ class PurchaseController extends Controller
         $this->authorize('view', $purchase);
 
         $purchase->load(['supplier', 'creator', 'items.product.unit', 'financialTransaction']);
-        $pendingTill = $this->cashier->pendingFor(CashierRequestType::PurchasePayment, $purchase);
 
-        return view('store.purchases.show', compact('purchase', 'pendingTill'));
+        return view('store.purchases.show', compact('purchase'));
     }
 
     public function edit(Purchase $purchase): View
@@ -108,7 +105,8 @@ class PurchaseController extends Controller
     {
         $this->authorize('complete', $purchase);
 
-        return $this->sendPurchaseToCashier($purchase->load('supplier'), $request->user());
+        return redirect()->route('store.purchases.show', $purchase)
+            ->with('error', 'The cashier records this payment on Daily Accounts. Stock will update from that transaction.');
     }
 
     public function destroy(Purchase $purchase): RedirectResponse
@@ -122,31 +120,6 @@ class PurchaseController extends Controller
         }
 
         return redirect()->route('store.purchases.index')->with('success', 'Purchase cancelled.');
-    }
-
-    private function sendPurchaseToCashier(Purchase $purchase, $user): RedirectResponse
-    {
-        try {
-            $queued = $this->cashier->submit(
-                CashierRequestType::PurchasePayment,
-                [
-                    'amount' => $purchase->total,
-                    'description' => "Pay {$purchase->reference_no} to {$purchase->supplier?->name} — then receive into stock",
-                ],
-                $user,
-                $purchase,
-            );
-        } catch (RuntimeException $e) {
-            return redirect()->route('store.purchases.show', $purchase)->with('error', $e->getMessage());
-        }
-
-        if ($queued->isPending()) {
-            return redirect()->route('store.purchases.show', $purchase)
-                ->with('success', 'Sent to the cashier. Stock increases when the cashier confirms payment.');
-        }
-
-        return redirect()->route('store.purchases.show', $purchase)
-            ->with('success', "Purchase {$purchase->fresh()->reference_no} paid and received. Inventory updated.");
     }
 
     private function formData(): array

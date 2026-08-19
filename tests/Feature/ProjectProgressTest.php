@@ -96,11 +96,18 @@ class ProjectProgressTest extends TestCase
                 'description' => 'Mason wages',
             ])
             ->assertRedirect()
-            ->assertSessionHas('success');
+            ->assertSessionHas('error');
 
         $this->assertSame(0.0, $project->fresh()->totalSpent());
 
-        $this->confirmPendingCashierRequests();
+        $this->cashierRecords([
+            'occurred_on' => now()->toDateString(),
+            'type' => 'project_expense',
+            'amount' => 15000,
+            'project_id' => $project->id,
+            'expense_category' => ExpenseCategory::Labour->value,
+            'description' => 'Mason wages',
+        ]);
 
         $this->assertSame(15000.0, $project->fresh()->totalSpent());
 

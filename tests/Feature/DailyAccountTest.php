@@ -127,13 +127,13 @@ class DailyAccountTest extends TestCase
             'project_id' => $project->id,
         ], $admin->id);
 
-        $this->actingAs($admin)->post(route('construction.projects.owner-payments.store', $project), [
+        $this->cashierRecords([
+            'occurred_on' => '2026-08-19',
+            'type' => DailyAccountType::OwnerPayment->value,
             'amount' => 500000,
-            'payment_date' => '2026-08-19',
             'method' => PaymentMethod::Cash->value,
-        ])->assertRedirect();
-
-        $this->confirmPendingCashierRequests($admin);
+            'project_id' => $project->id,
+        ], $admin);
 
         $this->assertDatabaseHas('daily_account_entries', [
             'type' => DailyAccountType::WorkerAdvance->value,
@@ -154,14 +154,14 @@ class DailyAccountTest extends TestCase
         $worker = $this->worker();
         $project = $this->project($site, 100000);
 
-        $this->actingAs($site)->post(route('construction.projects.expenses.store', $project), [
-            'category' => ExpenseCategory::Transport->value,
+        $this->cashierRecords([
+            'occurred_on' => '2026-08-19',
+            'type' => DailyAccountType::ProjectExpense->value,
             'amount' => 4000,
-            'expense_date' => '2026-08-19',
+            'project_id' => $project->id,
+            'expense_category' => ExpenseCategory::Transport->value,
             'description' => 'Lorry hire',
-        ])->assertRedirect();
-
-        $this->confirmPendingCashierRequests($admin);
+        ], $admin);
 
         $this->assertSame(1, DailyAccountEntry::query()->where('type', DailyAccountType::ProjectExpense)->count());
 

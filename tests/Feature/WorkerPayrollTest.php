@@ -380,18 +380,16 @@ class WorkerPayrollTest extends TestCase
                 'notes' => 'Family need',
             ])
             ->assertRedirect()
-            ->assertSessionHas('success');
+            ->assertSessionHas('error');
 
-        $this->assertDatabaseHas('cashier_requests', [
-            'worker_id' => $worker->id,
-            'status' => 'pending',
-        ]);
-        $this->assertDatabaseMissing('worker_payments', [
-            'worker_id' => $worker->id,
+        $this->cashierRecords([
+            'occurred_on' => $this->wednesday()->toDateString(),
+            'type' => 'worker_advance',
             'amount' => 3000,
-        ]);
-
-        $this->confirmPendingCashierRequests($admin);
+            'worker_id' => $worker->id,
+            'deduct_from_week' => false,
+            'description' => 'Family need',
+        ], $admin);
 
         $this->assertDatabaseHas('worker_payments', [
             'worker_id' => $worker->id,

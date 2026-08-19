@@ -16,18 +16,6 @@
     </x-slot>
 
     <div class="space-y-6">
-        @if ($pendingCashier->isNotEmpty())
-            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                <p class="font-semibold">Awaiting cashier</p>
-                <ul class="mt-2 list-disc space-y-1 pl-5">
-                    @foreach ($pendingCashier as $item)
-                        <li>{{ $item->type->label() }} — Rs. {{ number_format((float) $item->amount, 2) }} ({{ $item->description }})</li>
-                    @endforeach
-                </ul>
-                <p class="mt-2 text-xs">Project totals update after the cashier confirms the money on Daily Accounts.</p>
-            </div>
-        @endif
-
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
                 <p class="text-slate-500">Customer</p>
@@ -191,25 +179,16 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">No owner payments yet. Send the amount to the cashier; totals update from that transaction.</td></tr>
+                        <tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">No owner payments yet. The cashier records them on Daily Accounts.</td></tr>
                     @endforelse
                 </tbody>
             </table>
-            @can('recordOwnerPayments', $project)
-                <form method="POST" action="{{ route('construction.projects.owner-payments.store', $project) }}" class="grid gap-3 border-t p-4 sm:grid-cols-2 lg:grid-cols-5">
-                    @csrf
-                    <input type="number" step="0.01" min="0.01" name="amount" value="{{ old('amount') }}" placeholder="Amount (Rs.)" class="rounded-md border-gray-300 text-sm" required>
-                    <input type="date" name="payment_date" value="{{ old('payment_date', now()->toDateString()) }}" class="rounded-md border-gray-300 text-sm" required>
-                    <select name="method" class="rounded-md border-gray-300 text-sm" required>
-                        @foreach ($paymentMethods as $method)
-                            <option value="{{ $method->value }}" @selected(old('method', 'cash') === $method->value)>{{ $method->label() }}</option>
-                        @endforeach
-                    </select>
-                    <input type="text" name="reference" value="{{ old('reference') }}" placeholder="Bank slip / receipt no." class="rounded-md border-gray-300 text-sm">
-                    <input type="text" name="notes" value="{{ old('notes') }}" placeholder="Notes" class="rounded-md border-gray-300 text-sm">
-                    <button class="btn btn-primary lg:col-span-5">Send to cashier</button>
-                </form>
-            @endcan
+            <div class="border-t p-4 text-sm text-slate-600">
+                The cashier records site owner money on Daily Accounts. Total received, still to receive, and cash balance update from that transaction.
+                @if (auth()->user()->canManageDailyAccounts())
+                    <a href="{{ route('cashier.daily-accounts.index') }}" class="font-semibold text-amber-800 underline">Open Daily Accounts</a>
+                @endif
+            </div>
         </div>
 
         <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -247,19 +226,12 @@
                 </tbody>
             </table>
             @can('manageExpenses', $project)
-                <form method="POST" action="{{ route('construction.projects.expenses.store', $project) }}" class="grid gap-3 border-t p-4 sm:grid-cols-2 lg:grid-cols-4">
-                    @csrf
-                    <select name="category" class="rounded-md border-gray-300 text-sm" required>
-                        <option value="">Category</option>
-                        @foreach ($manualCategories as $category)
-                            <option value="{{ $category->value }}" @selected(old('category') === $category->value)>{{ $category->label() }}</option>
-                        @endforeach
-                    </select>
-                    <input type="number" step="0.01" min="0.01" name="amount" value="{{ old('amount') }}" placeholder="Amount" class="rounded-md border-gray-300 text-sm" required>
-                    <input type="date" name="expense_date" value="{{ old('expense_date', now()->toDateString()) }}" class="rounded-md border-gray-300 text-sm" required>
-                    <input type="text" name="description" value="{{ old('description') }}" placeholder="Description" class="rounded-md border-gray-300 text-sm lg:col-span-3" required>
-                    <button class="btn btn-primary">Send to cashier</button>
-                </form>
+                <div class="border-t p-4 text-sm text-slate-600">
+                    Cash site expenses are recorded by the cashier on Daily Accounts. Material from issues still posts here automatically.
+                    @if (auth()->user()->canManageDailyAccounts())
+                        <a href="{{ route('cashier.daily-accounts.index') }}" class="font-semibold text-amber-800 underline">Open Daily Accounts</a>
+                    @endif
+                </div>
             @endcan
         </div>
 
