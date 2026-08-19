@@ -129,6 +129,7 @@ never run that seeder on a live database.
 ## Phase 3 — Projects, workers, material requests
 
 - [x] Projects (admin creates; site manager sees assigned projects only)
+- [x] Site owner payments: budget − received = still to receive; received − expenses = cash balance
 - [x] Workers and assign-to-project
 - [x] Site manager material requests (draft → submit)
 - [x] Store manager approve full/partial quantity or reject with reason

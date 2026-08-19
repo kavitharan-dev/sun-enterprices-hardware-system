@@ -7,7 +7,7 @@
     </x-slot>
 
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p class="text-sm text-slate-600">Budget Rs. {{ number_format($budget, 2) }} · Spent Rs. {{ number_format($spent, 2) }}</p>
+        <p class="text-sm text-slate-600">Budget Rs. {{ number_format($budget, 2) }} · Received Rs. {{ number_format($received, 2) }} · Spent Rs. {{ number_format($spent, 2) }}</p>
         <a href="{{ request()->fullUrlWithQuery(['export' => 1]) }}" class="btn btn-secondary">Export CSV</a>
     </div>
 
@@ -17,8 +17,10 @@
                 <tr>
                     <th class="px-4 py-3">Project</th>
                     <th class="px-4 py-3 text-right">Budget</th>
+                    <th class="px-4 py-3 text-right">Received</th>
+                    <th class="px-4 py-3 text-right">Still to receive</th>
                     <th class="px-4 py-3 text-right">Spent</th>
-                    <th class="px-4 py-3 text-right">Remaining</th>
+                    <th class="px-4 py-3 text-right">Cash balance</th>
                     <th class="px-4 py-3 text-right">Progress</th>
                 </tr>
             </thead>
@@ -30,12 +32,14 @@
                             <p class="text-xs text-slate-500">{{ $project->project_code }}</p>
                         </td>
                         <td class="px-4 py-3 text-right">{{ number_format((float) $project->budget, 2) }}</td>
+                        <td class="px-4 py-3 text-right">{{ number_format((float) $project->received_total, 2) }}</td>
+                        <td class="px-4 py-3 text-right">{{ number_format((float) $project->budget - (float) $project->received_total, 2) }}</td>
                         <td class="px-4 py-3 text-right">{{ number_format((float) $project->spent_total, 2) }}</td>
-                        <td class="px-4 py-3 text-right">{{ number_format((float) $project->budget - (float) $project->spent_total, 2) }}</td>
+                        <td class="px-4 py-3 text-right">{{ number_format((float) $project->received_total - (float) $project->spent_total, 2) }}</td>
                         <td class="px-4 py-3 text-right">{{ number_format((float) $project->progress_percentage, 1) }}%</td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">No projects.</td></tr>
+                    <tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No projects.</td></tr>
                 @endforelse
             </tbody>
         </table>

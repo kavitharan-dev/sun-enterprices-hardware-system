@@ -27,6 +27,7 @@
                     <th class="px-4 py-3">Customer</th>
                     <th class="px-4 py-3">Site manager</th>
                     <th class="px-4 py-3 text-right">Budget</th>
+                    <th class="px-4 py-3 text-right">Still to receive</th>
                     <th class="px-4 py-3 text-right">Progress</th>
                     <th class="px-4 py-3">Status</th>
                     <th class="px-4 py-3"></th>
@@ -42,6 +43,7 @@
                         <td class="px-4 py-3">{{ $project->customer?->name }}</td>
                         <td class="px-4 py-3">{{ $project->siteManager?->name ?? '—' }}</td>
                         <td class="px-4 py-3 text-right">Rs. {{ number_format((float) $project->budget, 2) }}</td>
+                        <td class="px-4 py-3 text-right">Rs. {{ number_format((float) $project->budget - (float) $project->received_total, 2) }}</td>
                         <td class="px-4 py-3 text-right">{{ number_format((float) $project->progress_percentage, 1) }}%</td>
                         <td class="px-4 py-3"><x-status-badge :status="$project->status" /></td>
                         <td class="px-4 py-3 text-right">
@@ -49,7 +51,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No projects yet.</td></tr>
+                    <tr><td colspan="8" class="px-4 py-8 text-center text-slate-500">No projects yet.</td></tr>
                 @endforelse
             </tbody>
         </table>

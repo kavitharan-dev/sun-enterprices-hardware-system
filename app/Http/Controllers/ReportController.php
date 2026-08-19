@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Services\ReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
@@ -129,12 +129,14 @@ class ReportController extends Controller
         $data = $this->reports->projects($request->user());
 
         if ($request->boolean('export')) {
-            return $this->csv('projects-report.csv', ['Code', 'Project', 'Budget', 'Spent', 'Remaining', 'Progress'], $data['rows']->map(fn ($project) => [
+            return $this->csv('projects-report.csv', ['Code', 'Project', 'Budget', 'Received', 'Still to receive', 'Spent', 'Cash balance', 'Progress'], $data['rows']->map(fn ($project) => [
                 $project->project_code,
                 $project->name,
                 number_format((float) $project->budget, 2, '.', ''),
+                number_format((float) $project->received_total, 2, '.', ''),
+                number_format((float) $project->budget - (float) $project->received_total, 2, '.', ''),
                 number_format((float) $project->spent_total, 2, '.', ''),
-                number_format((float) $project->budget - (float) $project->spent_total, 2, '.', ''),
+                number_format((float) $project->received_total - (float) $project->spent_total, 2, '.', ''),
                 number_format((float) $project->progress_percentage, 1, '.', ''),
             ]));
         }

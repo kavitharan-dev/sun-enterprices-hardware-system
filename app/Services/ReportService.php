@@ -143,6 +143,7 @@ class ReportService
             ->visibleTo($user)
             ->with(['customer', 'siteManager'])
             ->withSum('expenses as spent_total', 'amount')
+            ->withSum('ownerPayments as received_total', 'amount')
             ->orderBy('name')
             ->get();
 
@@ -150,6 +151,7 @@ class ReportService
             'rows' => $projects,
             'budget' => (float) $projects->sum('budget'),
             'spent' => (float) $projects->sum('spent_total'),
+            'received' => (float) $projects->sum('received_total'),
         ];
     }
 

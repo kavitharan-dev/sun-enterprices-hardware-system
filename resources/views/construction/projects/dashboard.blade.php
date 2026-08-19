@@ -19,26 +19,34 @@
             </div>
         @endif
 
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
-                <p class="text-slate-500">Budget</p>
+                <p class="text-slate-500">Project budget</p>
                 <p class="text-lg font-semibold">Rs. {{ number_format((float) $project->budget, 2) }}</p>
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
-                <p class="text-slate-500">Spent</p>
+                <p class="text-slate-500">Total received</p>
+                <p class="text-lg font-semibold text-emerald-700">Rs. {{ number_format($received, 2) }}</p>
+                <p class="mt-1 text-xs text-slate-500">From the site owner</p>
+            </div>
+            <div class="rounded-xl border p-4 text-sm shadow-sm {{ $stillToReceive > 0 ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-white' }}">
+                <p class="{{ $stillToReceive > 0 ? 'text-amber-700' : 'text-slate-500' }}">Still to receive from site owner</p>
+                <p class="text-lg font-semibold {{ $stillToReceive > 0 ? 'text-amber-800' : 'text-emerald-700' }}">Rs. {{ number_format($stillToReceive, 2) }}</p>
+                <p class="mt-1 text-xs {{ $stillToReceive > 0 ? 'text-amber-700' : 'text-slate-500' }}">Budget − owner payments</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
+                <p class="text-slate-500">Development expenses</p>
                 <p class="text-lg font-semibold {{ $remaining < 0 ? 'text-rose-600' : '' }}">Rs. {{ number_format($spent, 2) }}</p>
             </div>
-            <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
-                <p class="text-slate-500">Remaining</p>
-                <p class="text-lg font-semibold">Rs. {{ number_format($remaining, 2) }}</p>
-            </div>
-            <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
-                <p class="text-slate-500">Budget used</p>
-                <p class="text-lg font-semibold">{{ number_format($usedPercent, 1) }}%</p>
+            <div class="rounded-xl border p-4 text-sm shadow-sm {{ $cashBalance < 0 ? 'border-rose-200 bg-rose-50' : 'border-emerald-200 bg-emerald-50' }}">
+                <p class="{{ $cashBalance < 0 ? 'text-rose-600' : 'text-emerald-700' }}">Cash balance after expenses</p>
+                <p class="text-lg font-semibold {{ $cashBalance < 0 ? 'text-rose-700' : 'text-emerald-800' }}">Rs. {{ number_format($cashBalance, 2) }}</p>
+                <p class="mt-1 text-xs {{ $cashBalance < 0 ? 'text-rose-600' : 'text-emerald-700' }}">Owner payments − expenses</p>
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
                 <p class="text-slate-500">Work progress</p>
                 <p class="text-lg font-semibold">{{ number_format((float) $project->progress_percentage, 1) }}%</p>
+                <p class="mt-1 text-xs text-slate-500">{{ number_format($usedPercent, 1) }}% of budget spent</p>
             </div>
         </div>
 

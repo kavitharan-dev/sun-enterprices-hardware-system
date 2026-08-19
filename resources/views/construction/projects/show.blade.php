@@ -16,7 +16,7 @@
     </x-slot>
 
     <div class="space-y-6">
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
                 <p class="text-slate-500">Customer</p>
                 <p class="font-semibold">{{ $project->customer?->name }}</p>
@@ -26,21 +26,40 @@
                 <p class="font-semibold">{{ $project->siteManager?->name ?? 'Unassigned' }}</p>
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
-                <p class="text-slate-500">Budget</p>
+                <p class="text-slate-500">Project budget</p>
                 <p class="font-semibold">Rs. {{ number_format((float) $project->budget, 2) }}</p>
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
-                <p class="text-slate-500">Spent</p>
-                <p class="font-semibold {{ $spent > (float) $project->budget && $project->budget > 0 ? 'text-rose-600' : '' }}">Rs. {{ number_format($spent, 2) }}</p>
+                <p class="text-slate-500">Total received</p>
+                <p class="font-semibold text-emerald-700">Rs. {{ number_format($received, 2) }}</p>
+                <p class="mt-1 text-xs text-slate-500">From the site owner</p>
             </div>
-            <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
-                <p class="text-slate-500">Remaining</p>
-                <p class="font-semibold">Rs. {{ number_format($project->remainingBudget(), 2) }}</p>
+            <div class="rounded-xl border p-4 text-sm shadow-sm {{ $stillToReceive > 0 ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-white' }}">
+                <p class="{{ $stillToReceive > 0 ? 'text-amber-700' : 'text-slate-500' }}">Still to receive</p>
+                <p class="font-semibold {{ $stillToReceive > 0 ? 'text-amber-800' : 'text-emerald-700' }}">Rs. {{ number_format($stillToReceive, 2) }}</p>
+                <p class="mt-1 text-xs {{ $stillToReceive > 0 ? 'text-amber-700' : 'text-slate-500' }}">Budget − owner payments</p>
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
                 <p class="text-slate-500">Progress</p>
                 <p class="font-semibold">{{ number_format((float) $project->progress_percentage, 1) }}%</p>
                 <p class="mt-1 text-xs text-slate-500">{{ $project->start_date->format('d/m/Y') }}@if($project->expected_end_date) — {{ $project->expected_end_date->format('d/m/Y') }}@endif</p>
+            </div>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-3">
+            <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
+                <p class="text-slate-500">Development expenses</p>
+                <p class="font-semibold {{ $spent > (float) $project->budget && $project->budget > 0 ? 'text-rose-600' : '' }}">Rs. {{ number_format($spent, 2) }}</p>
+            </div>
+            <div class="rounded-xl border p-4 text-sm shadow-sm {{ $cashBalance < 0 ? 'border-rose-200 bg-rose-50' : 'border-emerald-200 bg-emerald-50' }}">
+                <p class="{{ $cashBalance < 0 ? 'text-rose-600' : 'text-emerald-700' }}">Cash balance after expenses</p>
+                <p class="font-semibold {{ $cashBalance < 0 ? 'text-rose-700' : 'text-emerald-800' }}">Rs. {{ number_format($cashBalance, 2) }}</p>
+                <p class="mt-1 text-xs {{ $cashBalance < 0 ? 'text-rose-600' : 'text-emerald-700' }}">Owner payments − expenses</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
+                <p class="text-slate-500">Unspent budget</p>
+                <p class="font-semibold">Rs. {{ number_format($project->remainingBudget(), 2) }}</p>
+                <p class="mt-1 text-xs text-slate-500">Budget − expenses</p>
             </div>
         </div>
 
@@ -117,6 +136,66 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        </div>
+
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div class="border-b px-5 py-3">
+                <p class="font-semibold">Site owner payments</p>
+                <p class="text-xs text-slate-500">Each payment reduces “still to receive” and increases the cash balance. Expenses are counted separately.</p>
+            </div>
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+                    <tr>
+                        <th class="px-4 py-2">Date</th>
+                        <th class="px-4 py-2">Method</th>
+                        <th class="px-4 py-2">Reference / notes</th>
+                        <th class="px-4 py-2 text-right">Amount</th>
+                        <th class="px-4 py-2"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y">
+                    @forelse ($project->ownerPayments as $payment)
+                        <tr>
+                            <td class="px-4 py-3">{{ $payment->payment_date->format('d/m/Y') }}</td>
+                            <td class="px-4 py-3">{{ $payment->method->label() }}</td>
+                            <td class="px-4 py-3 text-slate-600">
+                                {{ $payment->reference ?: ($payment->notes ?: '—') }}
+                                @if ($payment->reference && $payment->notes)
+                                    <p class="text-xs text-slate-500">{{ $payment->notes }}</p>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-right font-medium">Rs. {{ number_format((float) $payment->amount, 2) }}</td>
+                            <td class="px-4 py-3 text-right">
+                                @can('recordOwnerPayments', $project)
+                                    <form method="POST" action="{{ route('construction.projects.owner-payments.destroy', [$project, $payment]) }}" onsubmit="return confirm('Remove this owner payment?')">
+                                        @csrf @method('DELETE')
+                                        <button class="btn btn-danger-outline btn-sm">Delete</button>
+                                    </form>
+                                @endcan
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">No owner payments yet. Record money received from the site owner here.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+            @can('recordOwnerPayments', $project)
+                <form method="POST" action="{{ route('construction.projects.owner-payments.store', $project) }}" class="grid gap-3 border-t p-4 sm:grid-cols-2 lg:grid-cols-5">
+                    @csrf
+                    <input type="number" step="0.01" min="0.01" name="amount" value="{{ old('amount') }}" placeholder="Amount (Rs.)" class="rounded-md border-gray-300 text-sm" required>
+                    <input type="date" name="payment_date" value="{{ old('payment_date', now()->toDateString()) }}" class="rounded-md border-gray-300 text-sm" required>
+                    <select name="method" class="rounded-md border-gray-300 text-sm" required>
+                        @foreach ($paymentMethods as $method)
+                            <option value="{{ $method->value }}" @selected(old('method', 'cash') === $method->value)>{{ $method->label() }}</option>
+                        @endforeach
+                    </select>
+                    <input type="text" name="reference" value="{{ old('reference') }}" placeholder="Bank slip / receipt no." class="rounded-md border-gray-300 text-sm">
+                    <input type="text" name="notes" value="{{ old('notes') }}" placeholder="Notes" class="rounded-md border-gray-300 text-sm">
+                    <button class="btn btn-primary lg:col-span-5">Record owner payment</button>
+                </form>
+            @endcan
         </div>
 
         <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">

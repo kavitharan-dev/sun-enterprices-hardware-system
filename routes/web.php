@@ -8,6 +8,7 @@ use App\Http\Controllers\Construction\DailyProgressController;
 use App\Http\Controllers\Construction\MaterialRequestController;
 use App\Http\Controllers\Construction\ProjectController;
 use App\Http\Controllers\Construction\ProjectExpenseController;
+use App\Http\Controllers\Construction\ProjectOwnerPaymentController;
 use App\Http\Controllers\Construction\WorkerController;
 use App\Http\Controllers\Construction\WorkerPayrollController;
 use App\Http\Controllers\DashboardController;
@@ -102,6 +103,8 @@ Route::middleware(['auth', 'role:admin|site_manager'])->prefix('construction')->
     Route::delete('projects/{project}/progress/{dailyProgress}', [DailyProgressController::class, 'destroy'])->name('projects.progress.destroy');
     Route::post('projects/{project}/expenses', [ProjectExpenseController::class, 'store'])->name('projects.expenses.store');
     Route::delete('projects/{project}/expenses/{projectExpense}', [ProjectExpenseController::class, 'destroy'])->name('projects.expenses.destroy');
+    Route::post('projects/{project}/owner-payments', [ProjectOwnerPaymentController::class, 'store'])->name('projects.owner-payments.store');
+    Route::delete('projects/{project}/owner-payments/{ownerPayment}', [ProjectOwnerPaymentController::class, 'destroy'])->name('projects.owner-payments.destroy');
     Route::resource('projects', ProjectController::class);
 
     Route::get('payroll', [WorkerPayrollController::class, 'index'])->name('payroll.index');

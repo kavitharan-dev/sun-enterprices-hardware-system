@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Construction;
 
 use App\Enums\ExpenseCategory;
+use App\Enums\PaymentMethod;
 use App\Enums\ProjectStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Construction\AssignWorkerRequest;
@@ -35,6 +36,7 @@ class ProjectController extends Controller
             ->visibleTo($request->user())
             ->with(['customer', 'siteManager'])
             ->withCount('materialRequests')
+            ->withSum('ownerPayments as received_total', 'amount')
             ->when($request->filled('q'), function ($query) use ($request) {
                 $term = '%'.$request->string('q').'%';
                 $query->where(function ($inner) use ($term) {
@@ -90,15 +92,32 @@ class ProjectController extends Controller
                         MaterialIssue::class => ['items.product.unit'],
                     ]);
                 }]),
+            'ownerPayments' => fn ($query) => $query->latest('payment_date')->latest('id')->with('receiver'),
             'dailyProgress' => fn ($query) => $query->latest('progress_date')->limit(10),
             'materialRequests' => fn ($query) => $query->with('items.product.unit')->latest()->limit(10),
         ]);
 
         $availableWorkers = Worker::query()->active()->orderBy('name')->get();
         $spent = $project->totalSpent();
+        $received = $project->totalReceived();
+        $stillToReceive = $project->remainingToReceive();
+        $cashBalance = $project->cashBalance();
         $manualCategories = ExpenseCategory::manualCases();
+        $paymentMethods = array_values(array_filter(
+            PaymentMethod::cases(),
+            fn (PaymentMethod $method) => $method !== PaymentMethod::Credit,
+        ));
 
-        return view('construction.projects.show', compact('project', 'availableWorkers', 'spent', 'manualCategories'));
+        return view('construction.projects.show', compact(
+            'project',
+            'availableWorkers',
+            'spent',
+            'received',
+            'stillToReceive',
+            'cashBalance',
+            'manualCategories',
+            'paymentMethods',
+        ));
     }
 
     public function dashboard(Project $project): View
@@ -108,6 +127,9 @@ class ProjectController extends Controller
         $project->load(['customer', 'siteManager']);
 
         $spent = $project->totalSpent();
+        $received = $project->totalReceived();
+        $stillToReceive = $project->remainingToReceive();
+        $cashBalance = $project->cashBalance();
         $remaining = $project->remainingBudget();
         $usedPercent = $project->budgetUsedPercent();
 
@@ -145,6 +167,9 @@ class ProjectController extends Controller
         return view('construction.projects.dashboard', compact(
             'project',
             'spent',
+            'received',
+            'stillToReceive',
+            'cashBalance',
             'remaining',
             'usedPercent',
             'spendByCategory',

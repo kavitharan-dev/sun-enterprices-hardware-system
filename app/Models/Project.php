@@ -79,6 +79,11 @@ class Project extends Model
         return $this->hasMany(ProjectExpense::class);
     }
 
+    public function ownerPayments(): HasMany
+    {
+        return $this->hasMany(ProjectOwnerPayment::class);
+    }
+
     public function dailyProgress(): HasMany
     {
         return $this->hasMany(DailyProgress::class);
@@ -89,6 +94,34 @@ class Project extends Model
         return round((float) $this->expenses()->sum('amount'), 2);
     }
 
+    /**
+     * Money the site owner has paid toward this project's budget.
+     */
+    public function totalReceived(): float
+    {
+        return round((float) $this->ownerPayments()->sum('amount'), 2);
+    }
+
+    /**
+     * Project Budget − Total Site Owner Payments.
+     */
+    public function remainingToReceive(): float
+    {
+        return round((float) $this->budget - $this->totalReceived(), 2);
+    }
+
+    /**
+     * Total Owner Payments − Total Development Expenses.
+     * Positive is cash in hand for the project; negative is a shortfall.
+     */
+    public function cashBalance(): float
+    {
+        return round($this->totalReceived() - $this->totalSpent(), 2);
+    }
+
+    /**
+     * Unspent contract budget (budget minus expenses). Independent of owner receipts.
+     */
     public function remainingBudget(): float
     {
         return round((float) $this->budget - $this->totalSpent(), 2);

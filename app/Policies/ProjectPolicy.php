@@ -46,4 +46,9 @@ class ProjectPolicy
     {
         return $user->hasRole('admin') || $project->isAssignedTo($user);
     }
+
+    public function recordOwnerPayments(User $user, Project $project): bool
+    {
+        return $user->hasRole('admin') || $project->isAssignedTo($user);
+    }
 }
