@@ -21,6 +21,18 @@
     @endphp
 
     <div class="space-y-6">
+        @if ($pendingCashier->isNotEmpty())
+            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <p class="font-semibold">Awaiting cashier</p>
+                <ul class="mt-2 list-disc space-y-1 pl-5">
+                    @foreach ($pendingCashier as $item)
+                        <li>{{ $item->type->label() }} — Rs. {{ number_format((float) $item->amount, 2) }}</li>
+                    @endforeach
+                </ul>
+                <p class="mt-2 text-xs">Worker paid totals update after the cashier confirms on Daily Accounts.</p>
+            </div>
+        @endif
+
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase text-slate-500">Weekly salary</p>

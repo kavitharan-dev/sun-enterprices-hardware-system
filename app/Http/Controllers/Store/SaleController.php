@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Store;
 
+use App\Enums\CashierRequestType;
+use App\Enums\PaymentMethod;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Store\CompleteSaleRequest;
 use App\Http\Requests\Store\SalePaymentRequest;
@@ -9,6 +11,7 @@ use App\Http\Requests\Store\SaleRequest;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Services\CashierRequestService;
 use App\Services\InvoiceService;
 use App\Services\SaleService;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +25,7 @@ class SaleController extends Controller
     public function __construct(
         private readonly SaleService $saleService,
         private readonly InvoiceService $invoices,
+        private readonly CashierRequestService $cashier,
     ) {}
 
     public function index(Request $request): View
@@ -65,16 +69,18 @@ class SaleController extends Controller
 
         if ($request->boolean('complete')) {
             try {
-                $this->saleService->complete($sale, [
-                    'amount' => $request->input('payment_amount', 0),
-                    'method' => $request->input('payment_method', 'cash'),
-                    'payment_date' => $request->input('sale_date'),
-                ], $request->user()->id);
+                return $this->takeSalePayment(
+                    $sale,
+                    [
+                        'amount' => $request->input('payment_amount', 0),
+                        'method' => $request->input('payment_method', 'cash'),
+                        'payment_date' => $request->input('sale_date'),
+                    ],
+                    $request->user(),
+                );
             } catch (RuntimeException $e) {
                 return redirect()->route('store.sales.show', $sale)->with('error', $e->getMessage());
             }
-
-            return $this->redirectAfterComplete($sale);
         }
 
         return redirect()->route('store.sales.show', $sale)->with('success', 'Draft sale saved.');
@@ -85,8 +91,9 @@ class SaleController extends Controller
         $this->authorize('view', $sale);
 
         $sale->load(['customer', 'creator', 'items.product.unit', 'payments.receiver']);
+        $pendingTill = $this->cashier->pendingFor(CashierRequestType::SalePayment, $sale);
 
-        return view('store.sales.show', compact('sale'));
+        return view('store.sales.show', compact('sale', 'pendingTill'));
     }
 
     public function edit(Sale $sale): View
@@ -120,16 +127,14 @@ class SaleController extends Controller
         $this->authorize('complete', $sale);
 
         try {
-            $this->saleService->complete($sale, [
+            return $this->takeSalePayment($sale, [
                 'amount' => $request->input('payment_amount', 0),
                 'method' => $request->input('payment_method', 'cash'),
                 'payment_date' => $sale->sale_date,
-            ], $request->user()->id);
+            ], $request->user());
         } catch (RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
-
-        return $this->redirectAfterComplete($sale);
     }
 
     public function pay(SalePaymentRequest $request, Sale $sale): RedirectResponse
@@ -137,12 +142,20 @@ class SaleController extends Controller
         $this->authorize('pay', $sale);
 
         try {
-            $this->saleService->recordPayment($sale, $request->validated(), $request->user()->id);
+            if ((string) $request->input('payment_method') === PaymentMethod::Credit->value) {
+                throw new RuntimeException('Record an actual payment. Credit does not collect money.');
+            }
+
+            return $this->takeSalePayment($sale, [
+                'amount' => $request->input('amount'),
+                'method' => $request->input('payment_method'),
+                'payment_date' => $request->input('payment_date', now()->toDateString()),
+                'reference' => $request->input('reference'),
+                'notes' => $request->input('notes'),
+            ], $request->user());
         } catch (RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
-
-        return back()->with('success', 'Payment recorded.');
     }
 
     public function destroy(Sale $sale): RedirectResponse
@@ -203,6 +216,42 @@ class SaleController extends Controller
             'company' => $this->invoices->company(),
             'goToNewSale' => $request->boolean('next'),
         ]);
+    }
+
+    private function takeSalePayment(Sale $sale, array $payment, $user): RedirectResponse
+    {
+        $method = (string) ($payment['method'] ?? 'cash');
+
+        if ($method === PaymentMethod::Credit->value) {
+            $this->saleService->complete($sale, $payment, $user->id);
+
+            return $this->redirectAfterComplete($sale->fresh());
+        }
+
+        $queued = $this->cashier->submit(
+            CashierRequestType::SalePayment,
+            [
+                'amount' => $payment['amount'] ?? 0,
+                'method' => $method,
+                'payment_date' => $payment['payment_date'] ?? now()->toDateString(),
+                'reference' => $payment['reference'] ?? null,
+                'notes' => $payment['notes'] ?? null,
+                'description' => 'Sale for '.$sale->customerName().' — Rs. '.number_format((float) $sale->total, 2),
+            ],
+            $user,
+            $sale,
+        );
+
+        if ($queued->isPending()) {
+            return redirect()->route('store.sales.show', $sale)
+                ->with('success', 'Sent to the cashier. Stock and daily accounts update when the cashier confirms the payment.');
+        }
+
+        if ($sale->fresh()->isCompleted()) {
+            return $this->redirectAfterComplete($sale);
+        }
+
+        return back()->with('success', 'Payment confirmed by the cashier.');
     }
 
     private function redirectAfterComplete(Sale $sale): RedirectResponse

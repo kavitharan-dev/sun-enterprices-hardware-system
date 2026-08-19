@@ -37,6 +37,8 @@ class ProjectOwnerPaymentTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('success');
 
+        $this->confirmPendingCashierRequests($admin);
+
         $this->actingAs($admin)
             ->post(route('construction.projects.owner-payments.store', $project), [
                 'amount' => 750000,
@@ -45,6 +47,8 @@ class ProjectOwnerPaymentTest extends TestCase
                 'reference' => 'SLIP-102',
             ])
             ->assertRedirect();
+
+        $this->confirmPendingCashierRequests($admin);
 
         $project = $project->fresh();
 
@@ -76,6 +80,8 @@ class ProjectOwnerPaymentTest extends TestCase
                 'payment_date' => '2026-08-10',
                 'method' => PaymentMethod::Cash->value,
             ]);
+
+        $this->confirmPendingCashierRequests();
 
         ProjectExpense::query()->create([
             'project_id' => $project->id,
@@ -121,6 +127,8 @@ class ProjectOwnerPaymentTest extends TestCase
             'method' => PaymentMethod::Cash->value,
         ]);
 
+        $this->confirmPendingCashierRequests();
+
         $project = $project->fresh();
 
         $this->assertSame(1750000.0, $project->totalReceived());
@@ -138,6 +146,8 @@ class ProjectOwnerPaymentTest extends TestCase
             'payment_date' => now()->toDateString(),
             'method' => PaymentMethod::Cash->value,
         ]);
+
+        $this->confirmPendingCashierRequests($admin);
 
         ProjectExpense::query()->create([
             'project_id' => $project->id,

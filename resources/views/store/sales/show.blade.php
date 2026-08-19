@@ -19,6 +19,13 @@
     </x-slot>
 
     <div class="space-y-6">
+        @if ($pendingTill)
+            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <p class="font-semibold">Awaiting cashier — Rs. {{ number_format((float) $pendingTill->amount, 2) }}</p>
+                <p class="mt-1">Stock and daily accounts update when the cashier confirms this payment.</p>
+            </div>
+        @endif
+
         <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <table class="min-w-full divide-y text-sm">
                 <thead class="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
@@ -58,11 +65,11 @@
             </div>
         </div>
 
-        @if ($sale->isDraft())
+        @if ($sale->isDraft() && ! $pendingTill)
             <form method="POST" action="{{ route('store.sales.complete', $sale) }}" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4" x-data="{ method: 'cash', tendered: {{ (float) $sale->total }}, total: {{ (float) $sale->total }} }">
                 @csrf
                 <h3 class="font-semibold">Complete sale</h3>
-                <p class="text-sm text-slate-500">This reduces inventory, generates an invoice, and opens the bill for printing.</p>
+                <p class="text-sm text-slate-500">Sends the payment to the cashier. Inventory and daily accounts update when the cashier confirms. Credit sales still complete without taking money now.</p>
                 @unless ($sale->customer_id)
                     <p class="text-sm text-slate-600">Walk-in customer on this draft: <strong>{{ $sale->customerName() }}</strong>. Edit the draft if you need to change the name before completing.</p>
                 @endunless

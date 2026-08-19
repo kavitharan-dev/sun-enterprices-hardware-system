@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Store;
 
+use App\Enums\CashierRequestType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Store\PurchaseRequest;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\Supplier;
+use App\Services\CashierRequestService;
 use App\Services\PurchaseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +17,10 @@ use RuntimeException;
 
 class PurchaseController extends Controller
 {
-    public function __construct(private readonly PurchaseService $purchaseService) {}
+    public function __construct(
+        private readonly PurchaseService $purchaseService,
+        private readonly CashierRequestService $cashier,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -56,10 +61,7 @@ class PurchaseController extends Controller
         );
 
         if ($request->boolean('complete')) {
-            $this->purchaseService->complete($purchase, $request->user()->id);
-
-            return redirect()->route('store.purchases.show', $purchase)
-                ->with('success', "Purchase {$purchase->reference_no} received. Inventory updated.");
+            return $this->sendPurchaseToCashier($purchase->load('supplier'), $request->user());
         }
 
         return redirect()->route('store.purchases.show', $purchase)
@@ -71,8 +73,9 @@ class PurchaseController extends Controller
         $this->authorize('view', $purchase);
 
         $purchase->load(['supplier', 'creator', 'items.product.unit']);
+        $pendingTill = $this->cashier->pendingFor(CashierRequestType::PurchasePayment, $purchase);
 
-        return view('store.purchases.show', compact('purchase'));
+        return view('store.purchases.show', compact('purchase', 'pendingTill'));
     }
 
     public function edit(Purchase $purchase): View
@@ -101,18 +104,11 @@ class PurchaseController extends Controller
         return redirect()->route('store.purchases.show', $purchase)->with('success', 'Purchase updated.');
     }
 
-    public function complete(Purchase $purchase): RedirectResponse
+    public function complete(Request $request, Purchase $purchase): RedirectResponse
     {
         $this->authorize('complete', $purchase);
 
-        try {
-            $this->purchaseService->complete($purchase);
-        } catch (RuntimeException $e) {
-            return back()->with('error', $e->getMessage());
-        }
-
-        return redirect()->route('store.purchases.show', $purchase)
-            ->with('success', "Purchase {$purchase->reference_no} received. Inventory increased.");
+        return $this->sendPurchaseToCashier($purchase->load('supplier'), $request->user());
     }
 
     public function destroy(Purchase $purchase): RedirectResponse
@@ -126,6 +122,31 @@ class PurchaseController extends Controller
         }
 
         return redirect()->route('store.purchases.index')->with('success', 'Purchase cancelled.');
+    }
+
+    private function sendPurchaseToCashier(Purchase $purchase, $user): RedirectResponse
+    {
+        try {
+            $queued = $this->cashier->submit(
+                CashierRequestType::PurchasePayment,
+                [
+                    'amount' => $purchase->total,
+                    'description' => "Pay {$purchase->reference_no} to {$purchase->supplier?->name} — then receive into stock",
+                ],
+                $user,
+                $purchase,
+            );
+        } catch (RuntimeException $e) {
+            return redirect()->route('store.purchases.show', $purchase)->with('error', $e->getMessage());
+        }
+
+        if ($queued->isPending()) {
+            return redirect()->route('store.purchases.show', $purchase)
+                ->with('success', 'Sent to the cashier. Stock increases when the cashier confirms payment.');
+        }
+
+        return redirect()->route('store.purchases.show', $purchase)
+            ->with('success', "Purchase {$purchase->fresh()->reference_no} paid and received. Inventory updated.");
     }
 
     private function formData(): array

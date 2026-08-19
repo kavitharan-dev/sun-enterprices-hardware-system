@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Construction;
 
+use App\Enums\CashierRequestType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Construction\SettleWorkerWeekRequest;
 use App\Http\Requests\Construction\WorkerAdvanceRequest;
 use App\Http\Requests\Construction\WorkerWorkDayRequest;
+use App\Models\CashierRequest;
 use App\Models\Project;
 use App\Models\Worker;
 use App\Models\WorkerPayrollWeek;
 use App\Models\WorkerWorkDay;
+use App\Services\CashierRequestService;
 use App\Services\WorkerPayrollService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +22,10 @@ use RuntimeException;
 
 class WorkerPayrollController extends Controller
 {
-    public function __construct(private readonly WorkerPayrollService $payroll) {}
+    public function __construct(
+        private readonly WorkerPayrollService $payroll,
+        private readonly CashierRequestService $cashier,
+    ) {}
 
     /**
      * Payday overview: every active worker for one week, so the shop can settle
@@ -81,21 +87,40 @@ class WorkerPayrollController extends Controller
             'previousWeek' => $week->week_start->copy()->subWeek()->toDateString(),
             'nextWeek' => $week->week_start->copy()->addWeek()->toDateString(),
             'history' => $worker->payrollWeeks()->with('payments')->limit(12)->get(),
+            'pendingCashier' => CashierRequest::query()
+                ->pending()
+                ->where('worker_id', $worker->id)
+                ->latest()
+                ->get(),
         ]);
     }
 
     public function storeAdvance(WorkerAdvanceRequest $request, Worker $worker): RedirectResponse
     {
         try {
-            $payment = $this->payroll->recordAdvance($worker, $request->validated(), $request->user()->id);
+            $queued = $this->cashier->submit(
+                CashierRequestType::WorkerAdvance,
+                [
+                    ...$request->validated(),
+                    'worker_id' => $worker->id,
+                    'description' => 'Advance to '.$worker->name
+                        .' — Rs. '.number_format((float) $request->input('amount'), 2),
+                ],
+                $request->user(),
+            );
         } catch (RuntimeException $exception) {
             return back()->with('error', $exception->getMessage())->withInput();
         }
 
-        return $this->backToWeek($worker, $payment->payment_date)
-            ->with('success', $payment->deduct_from_week
-                ? 'Advance recorded and deducted from this week.'
-                : 'Advance recorded and added to worker debt.');
+        if ($queued->isPending()) {
+            return $this->backToWeek($worker, $request->input('payment_date'))
+                ->with('success', 'Sent to the cashier. Worker totals update when the cashier pays.');
+        }
+
+        return $this->backToWeek($worker, $request->input('payment_date'))
+            ->with('success', $request->boolean('deduct_from_week')
+                ? 'Advance paid and deducted from this week.'
+                : 'Advance paid and added to worker debt.');
     }
 
     public function settle(SettleWorkerWeekRequest $request, Worker $worker, WorkerPayrollWeek $week): RedirectResponse
@@ -103,13 +128,26 @@ class WorkerPayrollController extends Controller
         abort_unless($week->worker_id === $worker->id, 404);
 
         try {
-            $this->payroll->settleWeek($week, $request->validated(), $request->user()->id);
+            $queued = $this->cashier->submit(
+                CashierRequestType::WorkerSettlement,
+                [
+                    ...$request->validated(),
+                    'worker_id' => $worker->id,
+                    'description' => 'Saturday wages for '.$worker->name.' ('.$week->label().')',
+                ],
+                $request->user(),
+                $week,
+            );
         } catch (RuntimeException $exception) {
             return back()->with('error', $exception->getMessage())->withInput();
         }
 
-        return $this->backToWeek($worker, $week->week_start)
-            ->with('success', 'Week settled.');
+        if ($queued->isPending()) {
+            return $this->backToWeek($worker, $week->week_start)
+                ->with('success', 'Sent to the cashier. The week settles when the cashier pays.');
+        }
+
+        return $this->backToWeek($worker, $week->week_start)->with('success', 'Week settled.');
     }
 
     public function reopen(Request $request, Worker $worker, WorkerPayrollWeek $week): RedirectResponse

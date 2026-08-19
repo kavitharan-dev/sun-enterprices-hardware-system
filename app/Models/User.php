@@ -62,6 +62,22 @@ class User extends Authenticatable
         return $this->hasAnyRole(['admin', 'store_manager', 'cashier']);
     }
 
+    /**
+     * Standing at the till: money can be taken or paid immediately.
+     */
+    public function canHandleTill(): bool
+    {
+        return $this->hasRole('cashier');
+    }
+
+    /**
+     * Confirm a queued payment. Admin may cover the till when the cashier is away.
+     */
+    public function canConfirmTill(): bool
+    {
+        return $this->hasAnyRole(['admin', 'cashier']);
+    }
+
     public function canManageDailyAccounts(): bool
     {
         return $this->hasAnyRole(['admin', 'store_manager', 'cashier']);

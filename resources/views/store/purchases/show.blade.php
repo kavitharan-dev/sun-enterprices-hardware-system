@@ -42,11 +42,18 @@
             </div>
         </div>
 
-        @if ($purchase->isDraft())
+        @if ($pendingTill)
+            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <p class="font-semibold">Awaiting cashier — Rs. {{ number_format((float) $pendingTill->amount, 2) }}</p>
+                <p class="mt-1">Stock increases when the cashier confirms this payment on Daily Accounts.</p>
+            </div>
+        @endif
+
+        @if ($purchase->isDraft() && ! $pendingTill)
             <div class="flex flex-wrap gap-3">
                 <form method="POST" action="{{ route('store.purchases.complete', $purchase) }}">
                     @csrf
-                    <button class="btn btn-success">Receive stock</button>
+                    <button class="btn btn-success">Send payment to cashier</button>
                 </form>
                 <a href="{{ route('store.purchases.edit', $purchase) }}" class="btn btn-secondary">Edit draft</a>
                 <form method="POST" action="{{ route('store.purchases.destroy', $purchase) }}" onsubmit="return confirm('Cancel this draft purchase?')">
@@ -54,7 +61,7 @@
                     <button class="btn btn-danger-outline">Cancel draft</button>
                 </form>
             </div>
-            <p class="text-sm text-slate-500">Receiving stock will increase inventory and write a purchase stock movement for each line.</p>
+            <p class="text-sm text-slate-500">The cashier pays the supplier, then this purchase is received into stock.</p>
         @endif
     </div>
 </x-app-layout>

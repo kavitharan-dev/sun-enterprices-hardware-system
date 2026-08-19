@@ -98,6 +98,10 @@ class ProjectProgressTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('success');
 
+        $this->assertSame(0.0, $project->fresh()->totalSpent());
+
+        $this->confirmPendingCashierRequests();
+
         $this->assertSame(15000.0, $project->fresh()->totalSpent());
 
         $this->actingAs($site)

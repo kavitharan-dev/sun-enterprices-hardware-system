@@ -382,6 +382,17 @@ class WorkerPayrollTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('success');
 
+        $this->assertDatabaseHas('cashier_requests', [
+            'worker_id' => $worker->id,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseMissing('worker_payments', [
+            'worker_id' => $worker->id,
+            'amount' => 3000,
+        ]);
+
+        $this->confirmPendingCashierRequests($admin);
+
         $this->assertDatabaseHas('worker_payments', [
             'worker_id' => $worker->id,
             'type' => WorkerPaymentType::Advance->value,

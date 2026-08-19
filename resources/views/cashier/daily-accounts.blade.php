@@ -33,6 +33,69 @@
             </div>
         </div>
 
+        @if ($pending->isNotEmpty())
+            <div class="overflow-hidden rounded-xl border border-amber-200 bg-white shadow-sm">
+                <div class="border-b border-amber-100 bg-amber-50 px-5 py-3">
+                    <p class="font-semibold text-amber-900">Awaiting cashier ({{ $pending->count() }})</p>
+                    <p class="text-xs text-amber-800">These are not in Daily Accounts yet. Confirm when you actually receive or pay the money.</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+                            <tr>
+                                <th class="px-3 py-2">Type</th>
+                                <th class="px-3 py-2">Description</th>
+                                <th class="px-3 py-2">Project / Worker</th>
+                                <th class="px-3 py-2">Requested by</th>
+                                <th class="px-3 py-2 text-right">Amount</th>
+                                <th class="px-3 py-2">Confirm</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            @foreach ($pending as $item)
+                                <tr>
+                                    <td class="px-3 py-3 whitespace-nowrap">
+                                        <p class="font-medium">{{ $item->type->label() }}</p>
+                                        <p class="text-xs {{ $item->direction === 'income' ? 'text-emerald-700' : 'text-rose-700' }}">{{ $item->direction === 'income' ? 'Money in' : 'Money out' }}</p>
+                                    </td>
+                                    <td class="px-3 py-3">{{ $item->description }}</td>
+                                    <td class="px-3 py-3">
+                                        {{ $item->project?->name ?? '—' }}
+                                        @if ($item->worker)
+                                            <p class="text-xs text-slate-500">{{ $item->worker->name }}</p>
+                                        @endif
+                                    </td>
+                                    <td class="px-3 py-3">{{ $item->requester?->name ?? '—' }}<p class="text-xs text-slate-500">{{ $item->created_at->format('d/m/Y H:i') }}</p></td>
+                                    <td class="px-3 py-3 text-right font-semibold">Rs. {{ number_format((float) $item->amount, 2) }}</td>
+                                    <td class="px-3 py-3">
+                                        @if (auth()->user()->canConfirmTill())
+                                            <form method="POST" action="{{ route('cashier.requests.confirm', $item) }}" class="flex flex-wrap items-end gap-2">
+                                                @csrf
+                                                <input type="date" name="payment_date" value="{{ $item->payment_date?->toDateString() ?? now()->toDateString() }}" class="rounded-md border-gray-300 text-xs" required>
+                                                <select name="method" class="rounded-md border-gray-300 text-xs" required>
+                                                    @foreach ($methods as $method)
+                                                        <option value="{{ $method->value }}" @selected(($item->method?->value ?? 'cash') === $method->value)>{{ $method->label() }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <input type="text" name="reference" value="{{ $item->reference }}" placeholder="Receipt no." class="w-28 rounded-md border-gray-300 text-xs">
+                                                <button class="btn btn-success btn-sm">Confirm</button>
+                                            </form>
+                                            <form method="POST" action="{{ route('cashier.requests.reject', $item) }}" class="mt-1" onsubmit="return confirm('Reject this request? No money will be recorded.')">
+                                                @csrf
+                                                <button class="text-xs font-semibold text-rose-600">Reject</button>
+                                            </form>
+                                        @else
+                                            <span class="text-xs text-slate-500">Waiting for cashier</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+
         <form method="GET" class="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
             <div>
                 <x-input-label for="from" value="From" />

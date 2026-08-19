@@ -2,35 +2,46 @@
 
 namespace App\Http\Controllers\Construction;
 
+use App\Enums\CashierRequestType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Construction\ProjectOwnerPaymentRequest;
 use App\Models\Project;
 use App\Models\ProjectOwnerPayment;
+use App\Services\CashierRequestService;
 use App\Services\DailyAccountService;
 use App\Traits\LogsActivity;
 use Illuminate\Http\RedirectResponse;
+use RuntimeException;
 
 class ProjectOwnerPaymentController extends Controller
 {
     use LogsActivity;
 
-    public function __construct(private readonly DailyAccountService $dailyAccounts) {}
+    public function __construct(
+        private readonly DailyAccountService $dailyAccounts,
+        private readonly CashierRequestService $cashier,
+    ) {}
 
     public function store(ProjectOwnerPaymentRequest $request, Project $project): RedirectResponse
     {
-        $payment = $project->ownerPayments()->create([
-            ...$request->validated(),
-            'received_by' => $request->user()->id,
-        ]);
+        try {
+            $queued = $this->cashier->submit(
+                CashierRequestType::OwnerPayment,
+                [
+                    ...$request->validated(),
+                    'project_id' => $project->id,
+                    'description' => 'Site owner payment for '.$project->name
+                        .' — Rs. '.number_format((float) $request->input('amount'), 2),
+                ],
+                $request->user(),
+            );
+        } catch (RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage())->withInput();
+        }
 
-        $this->logActivity(
-            'received',
-            'ProjectOwnerPayment',
-            'Recorded owner payment of Rs. '.number_format((float) $payment->amount, 2)." for {$project->project_code}",
-            $payment,
-        );
-
-        $this->dailyAccounts->postOwnerPayment($payment->setRelation('project', $project));
+        if ($queued->isPending()) {
+            return back()->with('success', 'Sent to the cashier. Project received totals update when the cashier confirms the money.');
+        }
 
         return back()->with('success', 'Site owner payment recorded. Budget remaining and cash balance have been updated.');
     }

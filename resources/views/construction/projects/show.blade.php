@@ -16,6 +16,18 @@
     </x-slot>
 
     <div class="space-y-6">
+        @if ($pendingCashier->isNotEmpty())
+            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <p class="font-semibold">Awaiting cashier</p>
+                <ul class="mt-2 list-disc space-y-1 pl-5">
+                    @foreach ($pendingCashier as $item)
+                        <li>{{ $item->type->label() }} — Rs. {{ number_format((float) $item->amount, 2) }} ({{ $item->description }})</li>
+                    @endforeach
+                </ul>
+                <p class="mt-2 text-xs">Project totals update after the cashier confirms the money on Daily Accounts.</p>
+            </div>
+        @endif
+
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
                 <p class="text-slate-500">Customer</p>
@@ -193,7 +205,7 @@
                     </select>
                     <input type="text" name="reference" value="{{ old('reference') }}" placeholder="Bank slip / receipt no." class="rounded-md border-gray-300 text-sm">
                     <input type="text" name="notes" value="{{ old('notes') }}" placeholder="Notes" class="rounded-md border-gray-300 text-sm">
-                    <button class="btn btn-primary lg:col-span-5">Record owner payment</button>
+                    <button class="btn btn-primary lg:col-span-5">Send to cashier</button>
                 </form>
             @endcan
         </div>
@@ -243,7 +255,7 @@
                     <input type="number" step="0.01" min="0.01" name="amount" value="{{ old('amount') }}" placeholder="Amount" class="rounded-md border-gray-300 text-sm" required>
                     <input type="date" name="expense_date" value="{{ old('expense_date', now()->toDateString()) }}" class="rounded-md border-gray-300 text-sm" required>
                     <input type="text" name="description" value="{{ old('description') }}" placeholder="Description" class="rounded-md border-gray-300 text-sm lg:col-span-3" required>
-                    <button class="btn btn-primary">Add expense</button>
+                    <button class="btn btn-primary">Send to cashier</button>
                 </form>
             @endcan
         </div>

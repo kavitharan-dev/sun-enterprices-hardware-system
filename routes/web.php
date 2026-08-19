@@ -50,6 +50,8 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'role:admin|store_manager|cashier'])->prefix('cashier')->name('cashier.')->group(function () {
+    Route::post('requests/{cashierRequest}/confirm', [DailyAccountController::class, 'confirm'])->name('requests.confirm');
+    Route::post('requests/{cashierRequest}/reject', [DailyAccountController::class, 'reject'])->name('requests.reject');
     Route::get('daily-accounts', [DailyAccountController::class, 'index'])->name('daily-accounts.index');
     Route::post('daily-accounts', [DailyAccountController::class, 'store'])->name('daily-accounts.store');
     Route::put('daily-accounts/opening', [DailyAccountController::class, 'updateOpening'])->name('daily-accounts.opening');

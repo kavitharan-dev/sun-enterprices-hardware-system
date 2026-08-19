@@ -6,19 +6,26 @@ use App\Enums\DailyAccountCategory;
 use App\Enums\DailyAccountType;
 use App\Enums\PaymentMethod;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Cashier\ConfirmCashierRequestRequest;
 use App\Http\Requests\Cashier\DailyAccountEntryRequest;
 use App\Http\Requests\Cashier\DailyAccountOpeningRequest;
+use App\Models\CashierRequest;
 use App\Models\DailyAccountEntry;
 use App\Models\Project;
 use App\Models\Worker;
+use App\Services\CashierRequestService;
 use App\Services\DailyAccountService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use RuntimeException;
 
 class DailyAccountController extends Controller
 {
-    public function __construct(private readonly DailyAccountService $accounts) {}
+    public function __construct(
+        private readonly DailyAccountService $accounts,
+        private readonly CashierRequestService $cashierRequests,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -58,6 +65,11 @@ class DailyAccountController extends Controller
 
         $filteredIncome = round((float) $entries->sum('income'), 2);
         $filteredExpense = round((float) $entries->sum('expense'), 2);
+        $pending = CashierRequest::query()
+            ->pending()
+            ->with(['project', 'worker', 'requester', 'subject'])
+            ->latest()
+            ->get();
 
         return view('cashier.daily-accounts', [
             'filters' => $filters,
@@ -75,7 +87,32 @@ class DailyAccountController extends Controller
                 PaymentMethod::cases(),
                 fn (PaymentMethod $method) => $method !== PaymentMethod::Credit,
             )),
+            'pending' => $pending,
         ]);
+    }
+
+    public function confirm(ConfirmCashierRequestRequest $request, CashierRequest $cashierRequest): RedirectResponse
+    {
+        try {
+            $this->cashierRequests->confirm($cashierRequest, $request->validated(), $request->user());
+        } catch (RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return back()->with('success', 'Payment confirmed. Daily accounts and the related page have been updated.');
+    }
+
+    public function reject(Request $request, CashierRequest $cashierRequest): RedirectResponse
+    {
+        abort_unless($request->user()?->canConfirmTill(), 403);
+
+        try {
+            $this->cashierRequests->reject($cashierRequest, $request->user(), $request->input('rejection_reason'));
+        } catch (RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return back()->with('success', 'Request rejected. No money was recorded.');
     }
 
     public function store(DailyAccountEntryRequest $request): RedirectResponse

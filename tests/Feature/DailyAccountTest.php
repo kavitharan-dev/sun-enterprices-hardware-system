@@ -120,6 +120,8 @@ class DailyAccountTest extends TestCase
             'method' => PaymentMethod::Cash->value,
         ])->assertRedirect();
 
+        $this->confirmPendingCashierRequests($admin);
+
         $this->assertDatabaseHas('daily_account_entries', [
             'type' => DailyAccountType::WorkerAdvance->value,
             'worker_id' => $worker->id,
@@ -145,6 +147,8 @@ class DailyAccountTest extends TestCase
             'expense_date' => '2026-08-19',
             'description' => 'Lorry hire',
         ])->assertRedirect();
+
+        $this->confirmPendingCashierRequests($admin);
 
         $this->assertSame(1, DailyAccountEntry::query()->where('type', DailyAccountType::ProjectExpense)->count());
 
