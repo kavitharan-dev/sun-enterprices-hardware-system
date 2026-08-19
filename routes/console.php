@@ -25,7 +25,9 @@ Schedule::job(new RunScheduledBusinessAlertsJob)
     ->timezone('Asia/Colombo')
     ->withoutOverlapping();
 
+// Hourly rather than nightly: a daily backup can lose a whole trading day of
+// sales, which the shop cannot reconstruct.
 Schedule::command('app:backup-database')
-    ->dailyAt('02:15')
+    ->hourly()
     ->timezone('Asia/Colombo')
     ->withoutOverlapping();

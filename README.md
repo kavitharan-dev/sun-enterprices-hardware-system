@@ -87,6 +87,10 @@ Visit: http://127.0.0.1:8000
 
 Public registration is disabled — admin creates users under **Users**.
 
+These are development defaults. `RolePermissionSeeder` sets all four to
+`password` and **resets them if re-run**, so change every one after deploying and
+never run that seeder on a live database.
+
 ## Phase 0 — Foundation
 
 - [x] Laravel project scaffold
@@ -144,7 +148,8 @@ Public registration is disabled — admin creates users under **Users**.
 
 - Text.lk SMS via queued jobs + `sms_logs` (disabled until `SMS_ENABLED=true`)
 - Queued email for important alerts; password reset already uses Laravel mail
-- Scheduler: low stock, SMS retry/delivery, backups
+- Scheduler: low stock, SMS retry/delivery, hourly database backups
+- Hourly gzipped backups copied to off-site storage — set `BACKUP_OFFSITE_DISK`
 - Audit log: login, products, purchases, stock, price changes
 - VPS deploy notes for `sunenterprise.lk` — see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
