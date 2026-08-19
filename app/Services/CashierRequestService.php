@@ -112,7 +112,13 @@ class CashierRequestService
                 'notes' => $till['notes'] ?? $request->notes,
             ]);
 
-            $this->execute($request->fresh(), $cashier);
+            $this->dailyAccounts->usingCashierRequest($request->fresh());
+
+            try {
+                $this->execute($request->fresh(), $cashier);
+            } finally {
+                $this->dailyAccounts->usingCashierRequest(null);
+            }
 
             $request->update([
                 'status' => CashierRequestStatus::Confirmed,

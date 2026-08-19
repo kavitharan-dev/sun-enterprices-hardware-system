@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class DailyAccountEntry extends Model
 {
     protected $fillable = [
+        'transaction_no',
         'occurred_on',
         'type',
         'category',
@@ -21,6 +22,7 @@ class DailyAccountEntry extends Model
         'reference_no',
         'source_type',
         'source_id',
+        'cashier_request_id',
         'method',
         'income',
         'expense',
@@ -54,6 +56,11 @@ class DailyAccountEntry extends Model
     public function recorder(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public function cashierRequest(): BelongsTo
+    {
+        return $this->belongsTo(CashierRequest::class);
     }
 
     public function source(): MorphTo

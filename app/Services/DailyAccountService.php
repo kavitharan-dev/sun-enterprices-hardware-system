@@ -6,6 +6,7 @@ use App\Enums\DailyAccountCategory;
 use App\Enums\DailyAccountType;
 use App\Enums\ExpenseCategory;
 use App\Enums\PaymentMethod;
+use App\Models\CashierRequest;
 use App\Models\DailyAccountDay;
 use App\Models\DailyAccountEntry;
 use App\Models\Payment;
@@ -17,33 +18,94 @@ use App\Models\WorkerPayment;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class DailyAccountService
 {
+    private ?CashierRequest $cashierRequest = null;
+
+    /**
+     * The cashier request currently being confirmed. Posts attach to it so
+     * Daily Accounts and the related page share one transaction id.
+     */
+    public function usingCashierRequest(?CashierRequest $request): void
+    {
+        $this->cashierRequest = $request;
+    }
+
     /**
      * @param  array<string, mixed>  $data
      */
     public function post(array $data, ?Model $source = null): DailyAccountEntry
     {
-        $income = round((float) ($data['income'] ?? 0), 2);
-        $expense = round((float) ($data['expense'] ?? 0), 2);
+        return DB::transaction(function () use ($data, $source) {
+            if ($source) {
+                $existing = DailyAccountEntry::query()
+                    ->where('source_type', $source::class)
+                    ->where('source_id', $source->getKey())
+                    ->first();
 
-        return DailyAccountEntry::query()->create([
-            'occurred_on' => $data['occurred_on'],
-            'type' => $data['type'],
-            'category' => $data['category'],
-            'description' => $data['description'],
-            'project_id' => $data['project_id'] ?? null,
-            'worker_id' => $data['worker_id'] ?? null,
-            'reference_no' => $data['reference_no'] ?? null,
-            'source_type' => $source ? $source::class : null,
-            'source_id' => $source?->getKey(),
-            'method' => $data['method'] ?? null,
-            'income' => $income,
-            'expense' => $expense,
-            'is_manual' => (bool) ($data['is_manual'] ?? false),
-            'recorded_by' => $data['recorded_by'] ?? null,
-        ]);
+                if ($existing) {
+                    $this->attach($existing, $source);
+
+                    return $existing;
+                }
+            }
+
+            if ($this->cashierRequest) {
+                $fromRequest = DailyAccountEntry::query()
+                    ->where('cashier_request_id', $this->cashierRequest->id)
+                    ->first();
+
+                if ($fromRequest) {
+                    $this->attach($fromRequest, $source);
+
+                    return $fromRequest;
+                }
+            }
+
+            $income = round((float) ($data['income'] ?? 0), 2);
+            $expense = round((float) ($data['expense'] ?? 0), 2);
+
+            $entry = DailyAccountEntry::query()->create([
+                'occurred_on' => $data['occurred_on'],
+                'type' => $data['type'],
+                'category' => $data['category'],
+                'description' => $data['description'],
+                'project_id' => $data['project_id'] ?? null,
+                'worker_id' => $data['worker_id'] ?? null,
+                'reference_no' => $data['reference_no'] ?? null,
+                'source_type' => $source ? $source::class : null,
+                'source_id' => $source?->getKey(),
+                'cashier_request_id' => $this->cashierRequest?->id,
+                'method' => $data['method'] ?? null,
+                'income' => $income,
+                'expense' => $expense,
+                'is_manual' => (bool) ($data['is_manual'] ?? false),
+                'recorded_by' => $data['recorded_by'] ?? null,
+            ]);
+
+            $entry->update([
+                'transaction_no' => sprintf('TXN-%06d', $entry->id),
+            ]);
+
+            $this->attach($entry->fresh(), $source);
+
+            return $entry->fresh();
+        });
+    }
+
+    private function attach(DailyAccountEntry $entry, ?Model $source): void
+    {
+        if ($source && method_exists($source, 'financialTransaction')) {
+            if ((int) $source->getAttribute('daily_account_entry_id') !== (int) $entry->id) {
+                $source->forceFill(['daily_account_entry_id' => $entry->id])->saveQuietly();
+            }
+        }
+
+        if ($this->cashierRequest && (int) $entry->cashier_request_id !== (int) $this->cashierRequest->id) {
+            $entry->forceFill(['cashier_request_id' => $this->cashierRequest->id])->saveQuietly();
+        }
     }
 
     public function removeFor(Model $source): void

@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div>
             <h2 class="text-xl font-semibold text-slate-800">Daily accounts</h2>
-            <p class="text-sm text-slate-500">Central cash book for the shop and every project. Opening + income − expenses = closing. Project budgets stay on the project page.</p>
+            <p class="text-sm text-slate-500">Each money movement is one transaction. Confirm it here once; sales, stock, workers, and projects show the same transaction ID.</p>
         </div>
     </x-slot>
 
@@ -168,8 +168,9 @@
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead class="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
-                        <tr>
-                            <th class="px-3 py-2">Date</th>
+                            <tr>
+                                <th class="px-3 py-2">Txn ID</th>
+                                <th class="px-3 py-2">Date</th>
                             <th class="px-3 py-2">Transaction type</th>
                             <th class="px-3 py-2">Category</th>
                             <th class="px-3 py-2">Description</th>
@@ -185,7 +186,7 @@
                     <tbody class="divide-y">
                         @if ($onlyDate)
                             <tr class="bg-slate-50">
-                                <td class="px-3 py-2 text-slate-500" colspan="7">Opening balance</td>
+                                <td class="px-3 py-2 text-slate-500" colspan="8">Opening balance</td>
                                 <td class="px-3 py-2 text-right text-slate-400">—</td>
                                 <td class="px-3 py-2 text-right text-slate-400">—</td>
                                 <td class="px-3 py-2 text-right font-semibold">Rs. {{ number_format($totals['opening'], 2) }}</td>
@@ -195,6 +196,7 @@
                         @forelse ($rows as $row)
                             @php $entry = $row['entry']; @endphp
                             <tr>
+                                <td class="whitespace-nowrap px-3 py-2"><x-transaction-no :no="$entry->transaction_no" /></td>
                                 <td class="whitespace-nowrap px-3 py-2">{{ $entry->occurred_on->format('d/m/Y') }}</td>
                                 <td class="px-3 py-2">{{ $entry->type->label() }}</td>
                                 <td class="px-3 py-2">{{ $entry->category->label() }}</td>
@@ -215,7 +217,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="11" class="px-3 py-8 text-center text-slate-500">No transactions for these filters.</td></tr>
+                            <tr><td colspan="12" class="px-3 py-8 text-center text-slate-500">No transactions for these filters.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

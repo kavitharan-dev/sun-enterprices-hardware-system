@@ -75,6 +75,7 @@ class WorkerPayrollController extends Controller
         $week->load([
             'payments.project',
             'payments.recorder',
+            'payments.financialTransaction',
             'workDays.project',
             'settler',
         ]);

@@ -90,7 +90,7 @@ class SaleController extends Controller
     {
         $this->authorize('view', $sale);
 
-        $sale->load(['customer', 'creator', 'items.product.unit', 'payments.receiver']);
+        $sale->load(['customer', 'creator', 'items.product.unit', 'payments.receiver', 'payments.financialTransaction']);
         $pendingTill = $this->cashier->pendingFor(CashierRequestType::SalePayment, $sale);
 
         return view('store.sales.show', compact('sale', 'pendingTill'));

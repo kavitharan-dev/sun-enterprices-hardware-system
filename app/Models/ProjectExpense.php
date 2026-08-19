@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ExpenseCategory;
+use App\Models\Concerns\HasFinancialTransaction;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProjectExpense extends Model
 {
+    use HasFinancialTransaction;
     use SoftDeletes;
 
     protected $fillable = [
@@ -22,6 +24,7 @@ class ProjectExpense extends Model
         'reference_type',
         'reference_id',
         'created_by',
+        'daily_account_entry_id',
     ];
 
     protected function casts(): array

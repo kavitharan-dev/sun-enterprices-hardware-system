@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use App\Enums\WorkerPaymentType;
+use App\Models\Concerns\HasFinancialTransaction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WorkerPayment extends Model
 {
+    use HasFinancialTransaction;
+
     protected $fillable = [
         'worker_id',
         'worker_payroll_week_id',
@@ -18,6 +21,7 @@ class WorkerPayment extends Model
         'deduct_from_week',
         'notes',
         'recorded_by',
+        'daily_account_entry_id',
     ];
 
     protected function casts(): array

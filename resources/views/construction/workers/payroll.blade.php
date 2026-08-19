@@ -222,6 +222,7 @@
                 <thead class="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
                     <tr>
                         <th class="px-4 py-2">Date</th>
+                        <th class="px-4 py-2">Txn ID</th>
                         <th class="px-4 py-2">Type</th>
                         <th class="px-4 py-2">Effect</th>
                         <th class="px-4 py-2">Site</th>
@@ -232,13 +233,14 @@
                     @forelse ($week->payments->sortBy('payment_date') as $payment)
                         <tr>
                             <td class="px-4 py-3">{{ $payment->payment_date->format('d/m/Y') }}</td>
+                            <td class="px-4 py-3"><x-transaction-no :no="$payment->transactionNo()" /></td>
                             <td class="px-4 py-3">{{ $payment->type->shortLabel() }}</td>
                             <td class="px-4 py-3 {{ $payment->createsDebt() ? 'text-rose-700' : 'text-slate-600' }}">{{ $payment->effect() }}</td>
                             <td class="px-4 py-3 text-slate-500">{{ $payment->project?->name ?? '—' }}</td>
                             <td class="px-4 py-3 text-right font-semibold">Rs. {{ number_format((float) $payment->amount, 2) }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">Nothing paid this week yet.</td></tr>
+                        <tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">Nothing paid this week yet.</td></tr>
                     @endforelse
                 </tbody>
             </table>

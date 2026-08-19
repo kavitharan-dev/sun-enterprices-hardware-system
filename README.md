@@ -150,7 +150,7 @@ never run that seeder on a live database.
 The cashier page at `/cashier/daily-accounts` is the company cash book.
 
 - Sales, purchases, worker advances/wages, site owner receipts, and cash site expenses are requested from the related page, then confirmed by the cashier (or admin covering the till) on Daily Accounts
-- Confirming posts **one** ledger row; related pages (stock, worker paid, project received/spent) update from that same transaction
+- Confirming posts **one** Daily Accounts transaction (`TXN-000123`). Sales, purchases, worker payments, owner receipts, and cash site expenses store that same ID so the amount is never typed twice
 - Store managers and site managers can create the request; they cannot confirm money
 - Opening + income − expenses = closing for the day
 - Project budget remaining stays on the project page and is not mixed into this till balance

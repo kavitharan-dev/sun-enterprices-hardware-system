@@ -155,6 +155,7 @@
                             @foreach ($sale->payments as $payment)
                                 <tr>
                                     <td class="px-4 py-3">{{ $payment->payment_date->format('d/m/Y') }}</td>
+                                    <td class="px-4 py-3"><x-transaction-no :no="$payment->transactionNo()" /></td>
                                     <td class="px-4 py-3">{{ $payment->payment_method->label() }}</td>
                                     <td class="px-4 py-3">Rs. {{ number_format((float) $payment->amount, 2) }}</td>
                                     <td class="px-4 py-3 text-slate-500">{{ $payment->receiver?->name }}</td>

@@ -88,12 +88,12 @@ class ProjectController extends Controller
                 ->latest('expense_date')
                 ->latest('id')
                 ->limit(10)
-                ->with(['reference' => function (MorphTo $morphTo) {
+                ->with(['financialTransaction', 'reference' => function (MorphTo $morphTo) {
                     $morphTo->morphWith([
                         MaterialIssue::class => ['items.product.unit'],
                     ]);
                 }]),
-            'ownerPayments' => fn ($query) => $query->latest('payment_date')->latest('id')->with('receiver'),
+            'ownerPayments' => fn ($query) => $query->latest('payment_date')->latest('id')->with(['receiver', 'financialTransaction']),
             'dailyProgress' => fn ($query) => $query->latest('progress_date')->limit(10),
             'materialRequests' => fn ($query) => $query->with('items.product.unit')->latest()->limit(10),
         ]);

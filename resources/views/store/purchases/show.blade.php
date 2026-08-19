@@ -39,6 +39,9 @@
                 <p>Discount: Rs. {{ number_format((float) $purchase->discount, 2) }}</p>
                 <p>Tax: Rs. {{ number_format((float) $purchase->tax, 2) }}</p>
                 <p class="text-lg font-bold text-slate-900">Total: Rs. {{ number_format((float) $purchase->total, 2) }}</p>
+                @if ($purchase->transactionNo())
+                    <p>Daily accounts: <x-transaction-no :no="$purchase->transactionNo()" /></p>
+                @endif
             </div>
         </div>
 

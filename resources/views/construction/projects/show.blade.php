@@ -161,6 +161,7 @@
                 <thead class="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
                     <tr>
                         <th class="px-4 py-2">Date</th>
+                        <th class="px-4 py-2">Txn ID</th>
                         <th class="px-4 py-2">Method</th>
                         <th class="px-4 py-2">Reference / notes</th>
                         <th class="px-4 py-2 text-right">Amount</th>
@@ -171,6 +172,7 @@
                     @forelse ($project->ownerPayments as $payment)
                         <tr>
                             <td class="px-4 py-3">{{ $payment->payment_date->format('d/m/Y') }}</td>
+                            <td class="px-4 py-3"><x-transaction-no :no="$payment->transactionNo()" /></td>
                             <td class="px-4 py-3">{{ $payment->method->label() }}</td>
                             <td class="px-4 py-3 text-slate-600">
                                 {{ $payment->reference ?: ($payment->notes ?: '—') }}
@@ -189,7 +191,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">No owner payments yet. Record money received from the site owner here.</td></tr>
+                        <tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">No owner payments yet. Send the amount to the cashier; totals update from that transaction.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -217,6 +219,7 @@
                     @forelse ($project->expenses as $expense)
                         <tr>
                             <td class="px-4 py-3">{{ $expense->expense_date->format('d/m/Y') }}</td>
+                            <td class="px-4 py-3"><x-transaction-no :no="$expense->transactionNo()" /></td>
                             <td class="px-4 py-3">{{ $expense->category->label() }}</td>
                             <td class="px-4 py-3">
                                 <p>{{ $expense->description }}</p>

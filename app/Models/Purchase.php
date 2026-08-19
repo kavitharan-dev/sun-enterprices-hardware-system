@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PurchaseStatus;
+use App\Models\Concerns\HasFinancialTransaction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Purchase extends Model
 {
+    use HasFinancialTransaction;
     use SoftDeletes;
 
     protected $fillable = [
@@ -24,6 +26,7 @@ class Purchase extends Model
         'notes',
         'created_by',
         'completed_at',
+        'daily_account_entry_id',
     ];
 
     protected function casts(): array

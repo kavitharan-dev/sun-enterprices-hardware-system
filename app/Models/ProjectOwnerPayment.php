@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use App\Enums\PaymentMethod;
+use App\Models\Concerns\HasFinancialTransaction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProjectOwnerPayment extends Model
 {
+    use HasFinancialTransaction;
+
     protected $fillable = [
         'project_id',
         'payment_date',
@@ -16,6 +19,7 @@ class ProjectOwnerPayment extends Model
         'reference',
         'notes',
         'received_by',
+        'daily_account_entry_id',
     ];
 
     protected function casts(): array

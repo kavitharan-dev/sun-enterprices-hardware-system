@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use App\Enums\PaymentMethod;
+use App\Models\Concerns\HasFinancialTransaction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Payment extends Model
 {
+    use HasFinancialTransaction;
+
     protected $fillable = [
         'payable_type',
         'payable_id',
@@ -18,6 +21,7 @@ class Payment extends Model
         'reference',
         'notes',
         'received_by',
+        'daily_account_entry_id',
     ];
 
     protected function casts(): array

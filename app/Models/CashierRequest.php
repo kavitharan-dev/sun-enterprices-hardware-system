@@ -8,6 +8,7 @@ use App\Enums\PaymentMethod;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class CashierRequest extends Model
@@ -71,6 +72,11 @@ class CashierRequest extends Model
     public function confirmer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'confirmed_by');
+    }
+
+    public function financialTransaction(): HasOne
+    {
+        return $this->hasOne(DailyAccountEntry::class, 'cashier_request_id');
     }
 
     public function scopePending(Builder $query): Builder

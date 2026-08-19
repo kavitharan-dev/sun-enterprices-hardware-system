@@ -11,6 +11,7 @@ use App\Enums\WorkerStatus;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\DailyAccountEntry;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Project;
 use App\Models\Supplier;
@@ -54,6 +55,14 @@ class DailyAccountTest extends TestCase
             'income' => 2350,
             'expense' => 0,
         ]);
+
+        $payment = Payment::query()->first();
+        $entry = DailyAccountEntry::query()->first();
+        $this->assertSame($entry->id, $payment->daily_account_entry_id);
+        $this->assertMatchesRegularExpression('/^TXN-\d{6}$/', $entry->transaction_no);
+
+        app(DailyAccountService::class)->postSalePayment($payment);
+        $this->assertSame(1, DailyAccountEntry::query()->count());
     }
 
     public function test_credit_sale_does_not_post_to_daily_accounts(): void
@@ -99,6 +108,10 @@ class DailyAccountTest extends TestCase
             'expense' => 20000,
             'income' => 0,
         ]);
+        $this->assertSame(
+            DailyAccountEntry::query()->value('id'),
+            $purchase->fresh()->daily_account_entry_id,
+        );
     }
 
     public function test_worker_advance_and_owner_payment_post_to_the_same_ledger(): void

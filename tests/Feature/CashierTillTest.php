@@ -173,6 +173,19 @@ class CashierTillTest extends TestCase
             'type' => DailyAccountType::OwnerPayment->value,
             'income' => 500000,
         ]);
+
+        $entry = DailyAccountEntry::query()->first();
+        $ownerPayment = $project->fresh()->ownerPayments()->first();
+        $request = CashierRequest::query()->first();
+
+        $this->assertSame($entry->id, $ownerPayment->daily_account_entry_id);
+        $this->assertSame($request->id, $entry->cashier_request_id);
+        $this->assertSame($entry->transaction_no, $ownerPayment->fresh()->transactionNo());
+
+        $this->actingAs($admin)
+            ->get(route('construction.projects.show', $project))
+            ->assertOk()
+            ->assertSee($entry->transaction_no);
     }
 
     public function test_site_expense_does_not_increase_spent_until_cashier_pays(): void

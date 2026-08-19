@@ -72,7 +72,7 @@ class PurchaseController extends Controller
     {
         $this->authorize('view', $purchase);
 
-        $purchase->load(['supplier', 'creator', 'items.product.unit']);
+        $purchase->load(['supplier', 'creator', 'items.product.unit', 'financialTransaction']);
         $pendingTill = $this->cashier->pendingFor(CashierRequestType::PurchasePayment, $purchase);
 
         return view('store.purchases.show', compact('purchase', 'pendingTill'));
