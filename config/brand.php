@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'name' => '𝖘𝖚𝖓 𝖊𝖓𝖙𝖊𝖗𝖕𝖗𝖎𝖈𝖊𝖘',
+    'name' => 'SUN ENTERPRICES',
     'tagline' => 'Hardware Store & Construction',
     'address' => 'Nilaweli, Trincomalee',
 ];

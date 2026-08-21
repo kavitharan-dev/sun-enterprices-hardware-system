@@ -16,6 +16,9 @@ Integrated full-stack business application connecting hardware store inventory w
 - [ERD & Database Design](docs/ERD.md)
 - [MVP User Stories](docs/USER_STORIES.md)
 - [Testing & go-live](docs/TESTING.md)
+- [First delivery checklist](docs/FIRST_DELIVERY.md)
+- [Oracle Always Free VPS](docs/ORACLE_FREE.md)
+- [Render free demo deploy](docs/RENDER.md)
 - [Production deployment](docs/DEPLOYMENT.md)
 
 ## Requirements
@@ -153,6 +156,7 @@ The cashier page at `/cashier/daily-accounts` is the company cash book.
 - That creates one transaction (`TXN-000123`) and updates sales, stock, worker paid totals, owner receipts, and cash site expenses from the same row
 - Other pages do not send payment requests and do not type the same amount again
 - Opening + income − expenses = closing for the day
+- At end of day the cashier can **print / PDF** the till report and **close the day** (locks that date; admin can reopen)
 - Project budget remaining stays on the project page and is not mixed into this till balance
 - Credit sales do not post until money is actually received
 - Material issues and auto labour allocations do not post a second time (stock was already bought; wages were already paid)

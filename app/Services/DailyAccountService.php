@@ -14,14 +14,19 @@ use App\Models\ProjectExpense;
 use App\Models\ProjectOwnerPayment;
 use App\Models\Purchase;
 use App\Models\Sale;
+use App\Models\User;
 use App\Models\WorkerPayment;
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class DailyAccountService
 {
+    use LogsActivity;
+
     private ?CashierRequest $cashierRequest = null;
 
     /**
@@ -63,6 +68,8 @@ class DailyAccountService
                     return $fromRequest;
                 }
             }
+
+            $this->assertDayOpen((string) $data['occurred_on']);
 
             $income = round((float) ($data['income'] ?? 0), 2);
             $expense = round((float) ($data['expense'] ?? 0), 2);
@@ -110,10 +117,17 @@ class DailyAccountService
 
     public function removeFor(Model $source): void
     {
-        DailyAccountEntry::query()
+        $entry = DailyAccountEntry::query()
             ->where('source_type', $source::class)
             ->where('source_id', $source->getKey())
-            ->delete();
+            ->first();
+
+        if (! $entry) {
+            return;
+        }
+
+        $this->assertDayOpen($entry->occurred_on->toDateString());
+        $entry->delete();
     }
 
     public function postSalePayment(Payment $payment): DailyAccountEntry
@@ -225,6 +239,8 @@ class DailyAccountService
 
     public function setOpening(string $date, float $amount, ?int $userId = null, ?string $notes = null): DailyAccountDay
     {
+        $this->assertDayOpen($date);
+
         $day = $this->dayFor($date, $userId);
         $day->update([
             'opening_balance' => round($amount, 2),
@@ -233,6 +249,136 @@ class DailyAccountService
         ]);
 
         return $day->fresh();
+    }
+
+    /**
+     * Lock the till for the day and snapshot the system closing balance.
+     * Optional counted cash is kept for the paper till check / variance.
+     */
+    public function closeDay(
+        string $date,
+        User $user,
+        ?float $countedCash = null,
+        ?string $notes = null,
+    ): DailyAccountDay {
+        return DB::transaction(function () use ($date, $user, $countedCash, $notes) {
+            $day = $this->dayFor($date, $user->id);
+
+            if ($day->isClosed()) {
+                throw new RuntimeException('This day is already closed.');
+            }
+
+            $totals = $this->totalsFor($date);
+
+            $day->update([
+                'is_closed' => true,
+                'closing_balance' => $totals['closing'],
+                'counted_cash' => $countedCash === null ? null : round($countedCash, 2),
+                'close_notes' => $notes,
+                'closed_at' => now(),
+                'closed_by' => $user->id,
+                'updated_by' => $user->id,
+            ]);
+
+            $this->logActivity(
+                'closed',
+                'DailyAccounts',
+                "Closed till for {$date}. System closing Rs. ".number_format($totals['closing'], 2),
+                $day,
+                [
+                    'closing_balance' => $totals['closing'],
+                    'counted_cash' => $countedCash,
+                ],
+                $user->id,
+            );
+
+            return $day->fresh(['closer']);
+        });
+    }
+
+    public function reopenDay(string $date, User $user): DailyAccountDay
+    {
+        if (! $user->hasRole('admin')) {
+            throw new RuntimeException('Only an admin can reopen a closed day.');
+        }
+
+        return DB::transaction(function () use ($date, $user) {
+            $day = $this->dayFor($date, $user->id);
+
+            if (! $day->isClosed()) {
+                throw new RuntimeException('This day is not closed.');
+            }
+
+            $day->update([
+                'is_closed' => false,
+                'closing_balance' => null,
+                'counted_cash' => null,
+                'close_notes' => null,
+                'closed_at' => null,
+                'closed_by' => null,
+                'updated_by' => $user->id,
+            ]);
+
+            $this->logActivity(
+                'reopened',
+                'DailyAccounts',
+                "Reopened till for {$date}",
+                $day,
+                userId: $user->id,
+            );
+
+            return $day->fresh();
+        });
+    }
+
+    public function assertDayOpen(string $date): void
+    {
+        $day = DailyAccountDay::query()->whereDate('business_date', $date)->first();
+
+        if ($day?->isClosed()) {
+            throw new RuntimeException(
+                'Daily accounts for '.$day->business_date->format('d/m/Y').' are closed. Reopen the day (admin) or use another date.'
+            );
+        }
+    }
+
+    /**
+     * Full day pack for on-screen print and PDF filing.
+     *
+     * @return array{
+     *     day: DailyAccountDay,
+     *     totals: array{opening: float, income: float, expense: float, closing: float},
+     *     rows: Collection<int, array{entry: DailyAccountEntry, balance: float}>,
+     *     variance: float|null
+     * }
+     */
+    public function dayReport(string $date): array
+    {
+        $day = $this->dayFor($date);
+        $totals = $this->totalsFor($date);
+        $entries = $this->entries(['from' => $date, 'to' => $date]);
+
+        $running = $totals['opening'];
+        $rows = $entries->map(function (DailyAccountEntry $entry) use (&$running) {
+            $running = round($running + $entry->net(), 2);
+
+            return ['entry' => $entry, 'balance' => $running];
+        });
+
+        $variance = null;
+        if ($day->isClosed() && $day->counted_cash !== null) {
+            $systemClosing = $day->closing_balance !== null
+                ? (float) $day->closing_balance
+                : $totals['closing'];
+            $variance = round((float) $day->counted_cash - $systemClosing, 2);
+        }
+
+        return [
+            'day' => $day->loadMissing('closer'),
+            'totals' => $totals,
+            'rows' => $rows,
+            'variance' => $variance,
+        ];
     }
 
     /**

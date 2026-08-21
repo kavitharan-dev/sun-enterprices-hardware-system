@@ -262,6 +262,121 @@ class DailyAccountTest extends TestCase
         ]);
     }
 
+    public function test_cashier_can_close_the_day_and_print_the_till_report(): void
+    {
+        Role::findOrCreate('cashier');
+        $cashier = User::factory()->create(['name' => 'Till Cashier']);
+        $cashier->assignRole('cashier');
+        $date = now()->toDateString();
+        $accounts = app(DailyAccountService::class);
+
+        $accounts->setOpening($date, 5000, $cashier->id);
+        $accounts->post([
+            'occurred_on' => $date,
+            'type' => DailyAccountType::OtherIncome,
+            'category' => DailyAccountCategory::OtherIncome,
+            'description' => 'Counter float top-up',
+            'income' => 1000,
+            'is_manual' => true,
+            'recorded_by' => $cashier->id,
+        ]);
+
+        $this->actingAs($cashier)
+            ->post(route('cashier.daily-accounts.close'), [
+                'business_date' => $date,
+                'counted_cash' => 5950,
+                'close_notes' => 'Short Rs. 50',
+            ])
+            ->assertRedirect(route('cashier.daily-accounts.print', ['date' => $date]))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('daily_account_days', [
+            'is_closed' => true,
+            'closing_balance' => 6000,
+            'counted_cash' => 5950,
+            'closed_by' => $cashier->id,
+        ]);
+        $this->assertTrue(
+            \App\Models\DailyAccountDay::query()->whereDate('business_date', $date)->where('is_closed', true)->exists()
+        );
+
+        $this->actingAs($cashier)
+            ->get(route('cashier.daily-accounts.print', ['date' => $date]))
+            ->assertOk()
+            ->assertSee('DAILY TILL REPORT')
+            ->assertSee('Counter float top-up')
+            ->assertSee('Closed')
+            ->assertSee('Variance');
+
+        $this->actingAs($cashier)
+            ->get(route('cashier.daily-accounts.pdf', ['date' => $date]))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_closed_day_rejects_new_money_until_admin_reopens(): void
+    {
+        Role::findOrCreate('cashier');
+        Role::findOrCreate('admin');
+        $cashier = User::factory()->create();
+        $cashier->assignRole('cashier');
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+        $date = now()->toDateString();
+
+        app(DailyAccountService::class)->closeDay($date, $cashier, 1000);
+
+        $this->actingAs($cashier)
+            ->post(route('cashier.daily-accounts.store'), [
+                'occurred_on' => $date,
+                'type' => DailyAccountType::OtherIncome->value,
+                'category' => DailyAccountCategory::OtherIncome->value,
+                'description' => 'Too late',
+                'amount' => 200,
+                'method' => PaymentMethod::Cash->value,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertSame(0, DailyAccountEntry::query()->count());
+
+        $this->actingAs($cashier)
+            ->post(route('cashier.daily-accounts.reopen'), ['business_date' => $date])
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->post(route('cashier.daily-accounts.reopen'), ['business_date' => $date])
+            ->assertRedirect(route('cashier.daily-accounts.index', ['from' => $date, 'to' => $date]));
+
+        $this->actingAs($cashier)
+            ->post(route('cashier.daily-accounts.store'), [
+                'occurred_on' => $date,
+                'type' => DailyAccountType::OtherIncome->value,
+                'category' => DailyAccountCategory::OtherIncome->value,
+                'description' => 'After reopen',
+                'amount' => 200,
+                'method' => PaymentMethod::Cash->value,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('daily_account_entries', [
+            'description' => 'After reopen',
+            'income' => 200,
+        ]);
+    }
+
+    public function test_site_manager_cannot_print_daily_accounts(): void
+    {
+        Role::findOrCreate('site_manager');
+        $site = User::factory()->create();
+        $site->assignRole('site_manager');
+
+        $this->actingAs($site)
+            ->get(route('cashier.daily-accounts.print', ['date' => now()->toDateString()]))
+            ->assertForbidden();
+    }
+
     /**
      * @return array{0: User, 1: Product}
      */

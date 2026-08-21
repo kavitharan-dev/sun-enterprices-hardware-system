@@ -28,10 +28,55 @@
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase text-slate-500">Closing balance</p>
-                <p class="mt-1 text-2xl font-semibold {{ $totals['closing'] < 0 ? 'text-rose-700' : 'text-slate-800' }}">Rs. {{ number_format($onlyDate ? $totals['closing'] : ($totals['opening'] + $filteredIncome - $filteredExpense), 2) }}</p>
+                <p class="mt-1 text-2xl font-semibold {{ $totals['closing'] < 0 ? 'text-rose-700' : 'text-slate-800' }}">Rs. {{ number_format($onlyDate ? ($day->isClosed() && $day->closing_balance !== null ? (float) $day->closing_balance : $totals['closing']) : ($totals['opening'] + $filteredIncome - $filteredExpense), 2) }}</p>
                 <p class="mt-1 text-xs text-slate-500">Opening + income − expenses</p>
             </div>
         </div>
+
+        @if ($onlyDate)
+            <div class="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                <div class="flex-1">
+                    @if ($day->isClosed())
+                        <p class="font-semibold text-emerald-800">Till closed for {{ \Illuminate\Support\Carbon::parse($from)->format('d/m/Y') }}</p>
+                        <p class="text-sm text-slate-500">
+                            Closed by {{ $day->closer?->name ?? '—' }}
+                            @if ($day->closed_at) at {{ $day->closed_at->format('d/m/Y H:i') }} @endif
+                            · Print or download the PDF for the daily check / paper backup.
+                        </p>
+                    @else
+                        <p class="font-semibold text-slate-800">End of day</p>
+                        <p class="text-sm text-slate-500">Print an interim report any time. Close the day when the till check is done — no more money can be recorded for this date.</p>
+                    @endif
+                </div>
+                <a href="{{ route('cashier.daily-accounts.print', ['date' => $from]) }}" class="btn btn-dark">Print day report</a>
+                <a href="{{ route('cashier.daily-accounts.pdf', ['date' => $from]) }}" class="btn btn-secondary">Download PDF</a>
+                @if ($canClose)
+                    <details class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                        <summary class="cursor-pointer text-sm font-semibold text-amber-900">Close day…</summary>
+                        <form method="POST" action="{{ route('cashier.daily-accounts.close') }}" class="mt-3 space-y-3" onsubmit="return confirm('Close this day? No more transactions can be recorded for this date until an admin reopens it.')">
+                            @csrf
+                            <input type="hidden" name="business_date" value="{{ $from }}">
+                            <div>
+                                <x-input-label for="counted_cash" value="Cash counted in till (optional)" />
+                                <x-text-input id="counted_cash" name="counted_cash" type="number" step="0.01" class="mt-1 block w-full" :value="old('counted_cash')" placeholder="Physical count" />
+                            </div>
+                            <div>
+                                <x-input-label for="close_notes" value="Close notes" />
+                                <x-text-input id="close_notes" name="close_notes" class="mt-1 block w-full" :value="old('close_notes')" placeholder="Optional" />
+                            </div>
+                            <x-primary-button>Close day &amp; print</x-primary-button>
+                        </form>
+                    </details>
+                @endif
+                @if ($canReopen)
+                    <form method="POST" action="{{ route('cashier.daily-accounts.reopen') }}" onsubmit="return confirm('Reopen this day so money can be recorded again?')">
+                        @csrf
+                        <input type="hidden" name="business_date" value="{{ $from }}">
+                        <button type="submit" class="btn btn-secondary">Reopen day</button>
+                    </form>
+                @endif
+            </div>
+        @endif
 
         @if ($pending->isNotEmpty())
             <div class="overflow-hidden rounded-xl border border-amber-200 bg-white shadow-sm">
@@ -234,13 +279,17 @@
                 <input type="hidden" name="business_date" value="{{ $from }}">
                 <div>
                     <x-input-label for="opening_balance" value="Opening (Rs.)" />
-                    <x-text-input id="opening_balance" name="opening_balance" type="number" step="0.01" class="mt-1 block w-full" :value="old('opening_balance', number_format((float) $day->opening_balance, 2, '.', ''))" required />
+                    <x-text-input id="opening_balance" name="opening_balance" type="number" step="0.01" class="mt-1 block w-full" :value="old('opening_balance', number_format((float) $day->opening_balance, 2, '.', ''))" required :disabled="$day->isClosed()" />
                 </div>
                 <div>
                     <x-input-label for="opening_notes" value="Notes" />
-                    <x-text-input id="opening_notes" name="notes" class="mt-1 block w-full" :value="old('notes', $day->notes)" placeholder="Optional" />
+                    <x-text-input id="opening_notes" name="notes" class="mt-1 block w-full" :value="old('notes', $day->notes)" placeholder="Optional" :disabled="$day->isClosed()" />
                 </div>
-                <x-primary-button>Save opening</x-primary-button>
+                @unless ($day->isClosed())
+                    <x-primary-button>Save opening</x-primary-button>
+                @else
+                    <p class="text-sm text-slate-500">Opening is locked because this day is closed.</p>
+                @endunless
             </form>
 
             @if ($canRecord)
@@ -356,7 +405,11 @@
             </form>
             @else
             <div class="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-                You can view this cash book. Only the cashier (or admin covering the till) records money here.
+                @if ($day->isClosed())
+                    This day is closed. Print or download the day report for the till check. An admin can reopen the day if a correction is needed.
+                @else
+                    You can view this cash book. Only the cashier (or admin covering the till) records money here.
+                @endif
             </div>
             @endif
         </div>

@@ -53,7 +53,11 @@ Route::middleware(['auth', 'role:admin|store_manager|cashier'])->prefix('cashier
     Route::post('requests/{cashierRequest}/confirm', [DailyAccountController::class, 'confirm'])->name('requests.confirm');
     Route::post('requests/{cashierRequest}/reject', [DailyAccountController::class, 'reject'])->name('requests.reject');
     Route::get('daily-accounts', [DailyAccountController::class, 'index'])->name('daily-accounts.index');
+    Route::get('daily-accounts/print', [DailyAccountController::class, 'print'])->name('daily-accounts.print');
+    Route::get('daily-accounts/pdf', [DailyAccountController::class, 'pdf'])->name('daily-accounts.pdf');
     Route::post('daily-accounts', [DailyAccountController::class, 'store'])->name('daily-accounts.store');
+    Route::post('daily-accounts/close', [DailyAccountController::class, 'close'])->name('daily-accounts.close');
+    Route::post('daily-accounts/reopen', [DailyAccountController::class, 'reopen'])->name('daily-accounts.reopen');
     Route::put('daily-accounts/opening', [DailyAccountController::class, 'updateOpening'])->name('daily-accounts.opening');
     Route::delete('daily-accounts/{entry}', [DailyAccountController::class, 'destroy'])->name('daily-accounts.destroy');
 });

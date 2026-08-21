@@ -9,6 +9,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PurchaseStatus;
 use App\Enums\SaleStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Cashier\CloseDailyAccountDayRequest;
 use App\Http\Requests\Cashier\ConfirmCashierRequestRequest;
 use App\Http\Requests\Cashier\DailyAccountEntryRequest;
 use App\Http\Requests\Cashier\DailyAccountOpeningRequest;
@@ -20,9 +21,11 @@ use App\Models\Sale;
 use App\Models\Worker;
 use App\Services\CashierRequestService;
 use App\Services\CashierTransactionService;
+use App\Services\DailyAccountReportService;
 use App\Services\DailyAccountService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 use RuntimeException;
 
@@ -30,6 +33,7 @@ class DailyAccountController extends Controller
 {
     public function __construct(
         private readonly DailyAccountService $accounts,
+        private readonly DailyAccountReportService $reports,
         private readonly CashierTransactionService $transactions,
         private readonly CashierRequestService $cashierRequests,
     ) {}
@@ -52,6 +56,7 @@ class DailyAccountController extends Controller
         ];
 
         $day = $this->accounts->dayFor($from, $request->user()->id);
+        $day->loadMissing('closer');
         $totals = $this->accounts->totalsFor($from);
         $entries = $this->accounts->entries($filters);
 
@@ -115,8 +120,65 @@ class DailyAccountController extends Controller
                 fn (PaymentMethod $method) => $method !== PaymentMethod::Credit,
             )),
             'pending' => $pending,
-            'canRecord' => $request->user()->canConfirmTill(),
+            'canRecord' => $request->user()->canConfirmTill() && ! $day->isClosed(),
+            'canClose' => $request->user()->canConfirmTill() && $onlyDate && ! $day->isClosed(),
+            'canReopen' => $request->user()->hasRole('admin') && $onlyDate && $day->isClosed(),
         ]);
+    }
+
+    public function print(Request $request): View
+    {
+        abort_unless($request->user()?->canManageDailyAccounts(), 403);
+
+        $date = $request->input('date', now()->toDateString());
+
+        return view('cashier.daily-accounts-print', $this->reports->report($date));
+    }
+
+    public function pdf(Request $request): Response
+    {
+        abort_unless($request->user()?->canManageDailyAccounts(), 403);
+
+        $date = $request->input('date', now()->toDateString());
+
+        return $this->reports->download($date);
+    }
+
+    public function close(CloseDailyAccountDayRequest $request): RedirectResponse
+    {
+        try {
+            $day = $this->accounts->closeDay(
+                $request->validated('business_date'),
+                $request->user(),
+                $request->filled('counted_cash') ? (float) $request->validated('counted_cash') : null,
+                $request->validated('close_notes'),
+            );
+        } catch (RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        $date = $day->business_date->toDateString();
+
+        return redirect()
+            ->route('cashier.daily-accounts.print', ['date' => $date])
+            ->with('success', 'Day closed. Print or save the PDF for the till check and paper backup.');
+    }
+
+    public function reopen(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()?->hasRole('admin'), 403);
+
+        $date = $request->input('business_date', now()->toDateString());
+
+        try {
+            $this->accounts->reopenDay($date, $request->user());
+        } catch (RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('cashier.daily-accounts.index', ['from' => $date, 'to' => $date])
+            ->with('success', 'Day reopened. New transactions can be recorded again.');
     }
 
     public function confirm(ConfirmCashierRequestRequest $request, CashierRequest $cashierRequest): RedirectResponse
@@ -170,6 +232,12 @@ class DailyAccountController extends Controller
             return back()->with('error', 'This row is the cash book copy of a cashier transaction. Reverse the sale, purchase, wage, or project payment instead of deleting it here.');
         }
 
+        try {
+            $this->accounts->assertDayOpen($entry->occurred_on->toDateString());
+        } catch (RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
         $date = $entry->occurred_on->toDateString();
         $entry->delete();
 
@@ -180,12 +248,16 @@ class DailyAccountController extends Controller
 
     public function updateOpening(DailyAccountOpeningRequest $request): RedirectResponse
     {
-        $this->accounts->setOpening(
-            $request->input('business_date'),
-            (float) $request->input('opening_balance'),
-            $request->user()->id,
-            $request->input('notes'),
-        );
+        try {
+            $this->accounts->setOpening(
+                $request->input('business_date'),
+                (float) $request->input('opening_balance'),
+                $request->user()->id,
+                $request->input('notes'),
+            );
+        } catch (RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
         return redirect()
             ->route('cashier.daily-accounts.index', [

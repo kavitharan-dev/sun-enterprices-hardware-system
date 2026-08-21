@@ -1,0 +1,55 @@
+# Render Blueprint — free web + free Postgres (DB expires after 30 days)
+# Deploy: https://dashboard.render.com/blueprints/new?repo=https://github.com/kavitharan-dev/sun-enterprices-hardware-system
+
+databases:
+  - name: sunenterprise-db
+    plan: free
+    databaseName: sunenterprise
+    user: sunenterprise
+    region: singapore
+
+services:
+  - type: web
+    name: sunenterprise
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: SUN ENTERPRICES
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_FORCE_HTTPS
+        value: "true"
+      - key: APP_TIMEZONE
+        value: Asia/Colombo
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: APP_KEY
+        generateValue: true
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sunenterprise-db
+          property: connectionString
+      - key: DB_URL
+        fromDatabase:
+          name: sunenterprise-db
+          property: connectionString
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_ENCRYPT
+        value: "true"
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: MAIL_MAILER
+        value: log
+      - key: SMS_ENABLED
+        value: "false"
