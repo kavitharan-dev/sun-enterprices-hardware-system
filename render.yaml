@@ -53,3 +53,11 @@ services:
         value: log
       - key: SMS_ENABLED
         value: "false"
+      - key: WEBROOT
+        value: /var/www/html/public
+      - key: SKIP_COMPOSER
+        value: "1"
+      - key: RUN_SCRIPTS
+        value: "1"
+      - key: REAL_IP_HEADER
+        value: "1"

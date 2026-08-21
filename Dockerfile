@@ -11,7 +11,8 @@ RUN npm run build
 
 FROM richarvey/nginx-php-fpm:3.1.6
 
-COPY . /var/www/html
+WORKDIR /var/www/html
+COPY . .
 COPY --from=assets /app/public/build /var/www/html/public/build
 
 RUN chmod +x /var/www/html/scripts/*.sh || true
