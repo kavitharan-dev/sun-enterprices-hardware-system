@@ -33,6 +33,8 @@
             </div>
         </div>
 
+        @include('cashier.partials.record-money-form')
+
         @if ($onlyDate)
             <div class="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
                 <div class="flex-1">
@@ -82,7 +84,7 @@
             <div class="overflow-hidden rounded-xl border border-amber-200 bg-white shadow-sm">
                 <div class="border-b border-amber-100 bg-amber-50 px-5 py-3">
                     <p class="font-semibold text-amber-900">Older requests still waiting ({{ $pending->count() }})</p>
-                    <p class="text-xs text-amber-800">New money is recorded in the form below. Confirm these leftover requests if they were sent before that change.</p>
+                    <p class="text-xs text-amber-800">New money is recorded in Record money above. Confirm these leftover requests if they were sent before that change.</p>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
@@ -189,8 +191,8 @@
                     name="type"
                     :options="collect($types)->map(fn ($t) => [
                         'value' => $t->value,
-                        'label' => $t->label(),
-                        'search' => $t->shortLabel().' '.$t->directionLabel(),
+                        'label' => $t->shortLabel().' ('.$t->directionLabel().')',
+                        'search' => $t->shortLabel().' '.$t->label().' '.$t->directionLabel(),
                     ])->values()"
                     :value="(string) ($filters['type'] ?? '')"
                     empty-label="All types"
@@ -307,259 +309,26 @@
             </div>
         </div>
 
-        <div class="grid gap-6 lg:grid-cols-2">
-            <form method="POST" action="{{ route('cashier.daily-accounts.opening') }}" class="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                @csrf @method('PUT')
-                <div>
-                    <p class="font-semibold text-slate-800">Opening balance</p>
-                    <p class="mt-1 text-sm text-slate-500">Set the till at the start of the day. Yesterday’s closing is used until you change it.</p>
-                </div>
-                <input type="hidden" name="business_date" value="{{ $from }}">
-                <div>
-                    <x-input-label for="opening_balance" value="Opening (Rs.)" />
-                    <x-text-input id="opening_balance" name="opening_balance" type="number" step="0.01" class="mt-1 block w-full" :value="old('opening_balance', number_format((float) $day->opening_balance, 2, '.', ''))" required :disabled="$day->isClosed()" />
-                </div>
-                <div>
-                    <x-input-label for="opening_notes" value="Notes" />
-                    <x-text-input id="opening_notes" name="notes" class="mt-1 block w-full" :value="old('notes', $day->notes)" placeholder="Optional" :disabled="$day->isClosed()" />
-                </div>
-                @unless ($day->isClosed())
-                    <x-primary-button>Save opening</x-primary-button>
-                @else
-                    <p class="text-sm text-slate-500">Opening is locked because this day is closed.</p>
-                @endunless
-            </form>
-
-            @if ($canRecord)
-            @php
-                $methodOptions = collect($methods)->map(fn ($m) => [
-                    'value' => $m->value,
-                    'label' => $m->label(),
-                ])->values();
-                $saleOptions = $openSales->map(fn ($s) => [
-                    'value' => (string) $s->id,
-                    'label' => ($s->invoice_no ?: 'Draft').' — '.$s->customerName().' — Rs. '.number_format((float) ($s->balance > 0 ? $s->balance : $s->total), 2),
-                    'search' => ($s->invoice_no ?: 'Draft').' '.$s->customerName(),
-                ])->values();
-                $purchaseOptions = $draftPurchases->map(fn ($p) => [
-                    'value' => (string) $p->id,
-                    'label' => $p->reference_no.' — '.($p->supplier?->name ?? '').' — Rs. '.number_format((float) $p->total, 2),
-                    'search' => $p->reference_no.' '.($p->supplier?->name ?? ''),
-                ])->values();
-                $projectOptions = $projects->map(fn ($p) => [
-                    'value' => (string) $p->id,
-                    'label' => $p->name.($p->project_code ? ' ('.$p->project_code.')' : ''),
-                    'search' => $p->name.' '.($p->project_code ?? ''),
-                ])->values();
-                $workerOptions = $workers->map(fn ($w) => [
-                    'value' => (string) $w->id,
-                    'label' => $w->name.($w->worker_code ? ' — '.$w->worker_code : ''),
-                    'search' => $w->name.' '.($w->worker_code ?? ''),
-                ])->values();
-                $expenseCategoryOptions = collect($expenseCategories)->map(fn ($c) => [
-                    'value' => $c->value,
-                    'label' => $c->label(),
-                ])->values();
-                $typeHints = collect($types)->mapWithKeys(fn ($t) => [
-                    $t->value => $t->isIncome()
-                        ? 'Money coming into the till ('.$t->shortLabel().').'
-                        : 'Money leaving the till ('.$t->shortLabel().').',
-                ])->all();
-            @endphp
-            <form
-                method="POST"
-                action="{{ route('cashier.daily-accounts.store') }}"
-                class="relative z-40 space-y-4 overflow-visible rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-1"
-                x-data="dailyRecordForm({{ \Illuminate\Support\Js::from(old('type', 'owner_payment')) }})"
-            >
-                @csrf
-                <div>
-                    <p class="font-semibold text-slate-800">Record money</p>
-                    <p class="mt-1 text-sm text-slate-500">Choose what this cash movement is, then pick the related sale, purchase, worker, or project from the dropdowns below.</p>
-                </div>
-
-                <div>
-                    <x-input-label for="record_type" value="What is this money?" />
-                    <p class="mt-0.5 text-xs text-slate-500">Pick one option. Each line shows money IN (till receives) or money OUT (till pays).</p>
-                    <select
-                        id="record_type"
-                        name="type"
-                        x-model="type"
-                        class="mt-2 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"
-                        required
-                    >
-                        @foreach ($types as $t)
-                            <option value="{{ $t->value }}" @selected(old('type', 'owner_payment') === $t->value)>
-                                {{ $t->label() }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <p class="mt-2 text-sm font-medium" :class="isIncome ? 'text-emerald-700' : 'text-rose-700'" x-text="typeHint"></p>
-                </div>
-
-                <div class="grid gap-3 overflow-visible sm:grid-cols-2">
-                    <div>
-                        <x-input-label for="occurred_on" value="Date" />
-                        <x-text-input id="occurred_on" name="occurred_on" type="date" class="mt-1 block w-full" :value="old('occurred_on', $from)" required />
-                    </div>
-
-                    <div x-show="type === 'sale'" x-cloak class="sm:col-span-2 relative z-40">
-                        <x-input-label for="sale_id" value="Sale" />
-                        <x-searchable-select
-                            name="sale_id"
-                            :options="$saleOptions"
-                            :value="(string) old('sale_id')"
-                            empty-label="Select a draft or unpaid sale"
-                            :allow-empty="true"
-                            placeholder="Type invoice or customer…"
-                            class="mt-1"
-                        />
-                    </div>
-
-                    <div x-show="type === 'purchase'" x-cloak class="sm:col-span-2 relative z-40">
-                        <x-input-label for="purchase_id" value="Purchase" />
-                        <x-searchable-select
-                            name="purchase_id"
-                            :options="$purchaseOptions"
-                            :value="(string) old('purchase_id')"
-                            empty-label="Select a draft purchase to pay"
-                            :allow-empty="true"
-                            placeholder="Type purchase or supplier…"
-                            class="mt-1"
-                        />
-                    </div>
-
-                    <div x-show="needsProject" x-cloak class="relative z-40">
-                        <x-input-label for="manual_project" value="Project" />
-                        <x-searchable-select
-                            name="project_id"
-                            :options="$projectOptions"
-                            :value="(string) old('project_id')"
-                            empty-label="Select project"
-                            :allow-empty="true"
-                            placeholder="Type project name…"
-                            class="mt-1"
-                        />
-                    </div>
-
-                    <div x-show="needsWorker" x-cloak class="relative z-40">
-                        <x-input-label for="manual_worker" value="Worker" />
-                        <x-searchable-select
-                            name="worker_id"
-                            :options="$workerOptions"
-                            :value="(string) old('worker_id')"
-                            empty-label="Select worker"
-                            :allow-empty="true"
-                            placeholder="Type worker name or code…"
-                            class="mt-1"
-                        />
-                    </div>
-
-                    <div x-show="type === 'project_expense'" x-cloak class="relative z-40">
-                        <x-input-label for="expense_category" value="Expense category" />
-                        <x-searchable-select
-                            name="expense_category"
-                            :options="$expenseCategoryOptions"
-                            :value="(string) old('expense_category')"
-                            empty-label="Category"
-                            :allow-empty="true"
-                            placeholder="Search category…"
-                            class="mt-1"
-                        />
-                    </div>
-
-                    <div x-show="type === 'other_income' || type === 'other_expense'" x-cloak class="relative z-40">
-                        <x-input-label for="manual_category" value="Category" />
-                        <x-searchable-select
-                            name="category"
-                            :options="[
-                                ['value' => 'other_income', 'label' => 'Other income'],
-                                ['value' => 'other', 'label' => 'Other'],
-                                ['value' => 'transport', 'label' => 'Transport'],
-                                ['value' => 'labour', 'label' => 'Labour'],
-                            ]"
-                            :value="(string) old('category', 'other_income')"
-                            empty-label="Other income"
-                            :allow-empty="false"
-                            placeholder="Category"
-                            class="mt-1"
-                        />
-                    </div>
-
-                    <div x-show="type !== 'purchase'" x-cloak>
-                        <x-input-label for="manual_amount" value="Amount (Rs.)" />
-                        <x-text-input id="manual_amount" name="amount" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('amount')" />
-                    </div>
-
-                    <div class="relative z-40">
-                        <x-input-label for="manual_method" value="Payment method" />
-                        <x-searchable-select
-                            name="method"
-                            :options="$methodOptions"
-                            :value="(string) old('method', collect($methods)->first()?->value ?? 'cash')"
-                            empty-label="Select method"
-                            :allow-empty="false"
-                            placeholder="Cash, card, bank…"
-                            class="mt-1"
-                        />
-                    </div>
-
-                    <div>
-                        <x-input-label for="manual_reference" value="Receipt / reference" />
-                        <x-text-input id="manual_reference" name="reference_no" class="mt-1 block w-full" :value="old('reference_no')" placeholder="Slip / voucher" />
-                    </div>
-
-                    <div x-show="type === 'worker_advance'" x-cloak class="sm:col-span-2">
-                        <label class="inline-flex items-center gap-2 text-sm">
-                            <input type="checkbox" name="deduct_from_week" value="1" class="rounded border-gray-300" @checked(old('deduct_from_week'))>
-                            Deduct this advance from the current week salary
-                        </label>
-                    </div>
-
-                    <div x-show="type === 'worker_settlement'" x-cloak>
-                        <x-input-label for="debt_deducted" value="Recover worker debt (Rs.)" />
-                        <x-text-input id="debt_deducted" name="debt_deducted" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('debt_deducted', 0)" />
-                    </div>
-
-                    <div class="sm:col-span-2">
-                        <x-input-label for="manual_description" value="Notes" />
-                        <x-text-input id="manual_description" name="description" class="mt-1 block w-full" :value="old('description')" placeholder="Optional except for other income, other expense, and site expense" />
-                    </div>
-                </div>
-                <x-primary-button>Record in Daily Accounts</x-primary-button>
-            </form>
-
-            @push('scripts')
-                <script>
-                    function dailyRecordForm(initialType) {
-                        return {
-                            type: initialType || 'owner_payment',
-                            typeHints: @json($typeHints),
-                            get needsProject() {
-                                return ['owner_payment', 'project_expense', 'worker_advance', 'worker_settlement'].indexOf(this.type) !== -1;
-                            },
-                            get needsWorker() {
-                                return ['worker_advance', 'worker_settlement'].indexOf(this.type) !== -1;
-                            },
-                            get isIncome() {
-                                return ['sale', 'owner_payment', 'other_income'].indexOf(this.type) !== -1;
-                            },
-                            get typeHint() {
-                                return this.typeHints[this.type] || '';
-                            },
-                        };
-                    }
-                </script>
-            @endpush
-            @else
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-                @if ($day->isClosed())
-                    This day is closed. Print or download the day report for the till check. An admin can reopen the day if a correction is needed.
-                @else
-                    You can view this cash book. Only the cashier (or admin covering the till) records money here.
-                @endif
+        <form method="POST" action="{{ route('cashier.daily-accounts.opening') }}" class="max-w-xl space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            @csrf @method('PUT')
+            <div>
+                <p class="font-semibold text-slate-800">Opening balance</p>
+                <p class="mt-1 text-sm text-slate-500">Cash in the till at the start of the day.</p>
             </div>
-            @endif
-        </div>
+            <input type="hidden" name="business_date" value="{{ $from }}">
+            <div>
+                <x-input-label for="opening_balance" value="Opening (Rs.)" />
+                <x-text-input id="opening_balance" name="opening_balance" type="number" step="0.01" class="mt-1 block w-full" :value="old('opening_balance', number_format((float) $day->opening_balance, 2, '.', ''))" required :disabled="$day->isClosed()" />
+            </div>
+            <div>
+                <x-input-label for="opening_notes" value="Notes" />
+                <x-text-input id="opening_notes" name="notes" class="mt-1 block w-full" :value="old('notes', $day->notes)" placeholder="Optional" :disabled="$day->isClosed()" />
+            </div>
+            @unless ($day->isClosed())
+                <x-primary-button>Save opening</x-primary-button>
+            @else
+                <p class="text-sm text-slate-500">Opening is locked because this day is closed.</p>
+            @endunless
+        </form>
     </div>
 </x-app-layout>
