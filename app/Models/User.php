@@ -54,7 +54,7 @@ class User extends Authenticatable
 
     public function canManageStore(): bool
     {
-        return $this->hasAnyRole(['admin', 'store_manager']);
+        return $this->hasAnyRole(['admin', 'store_manager', 'cashier']);
     }
 
     public function canHandleSales(): bool
@@ -105,7 +105,7 @@ class User extends Authenticatable
 
     public function canReviewMaterialRequests(): bool
     {
-        return $this->hasAnyRole(['admin', 'store_manager']);
+        return $this->hasAnyRole(['admin', 'store_manager', 'cashier']);
     }
 
     public function canIssueMaterials(): bool
@@ -120,7 +120,7 @@ class User extends Authenticatable
 
     public function canViewStoreReports(): bool
     {
-        return $this->hasAnyRole(['admin', 'store_manager']);
+        return $this->hasAnyRole(['admin', 'store_manager', 'cashier']);
     }
 
     public function canViewConstructionReports(): bool

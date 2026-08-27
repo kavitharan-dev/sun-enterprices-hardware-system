@@ -88,7 +88,7 @@ class PurchaseStockTest extends TestCase
             ->assertOk();
     }
 
-    public function test_cashier_cannot_access_inventory(): void
+    public function test_cashier_can_access_inventory(): void
     {
         Role::findOrCreate('cashier');
 
@@ -97,6 +97,6 @@ class PurchaseStockTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('store.inventory.index'))
-            ->assertForbidden();
+            ->assertOk();
     }
 }

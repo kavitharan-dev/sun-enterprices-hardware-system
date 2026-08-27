@@ -135,7 +135,7 @@ class SaleStockTest extends TestCase
         $this->assertSame(0.0, (float) $customer->outstanding_balance);
     }
 
-    public function test_cashier_can_access_sales_and_customers_but_not_inventory(): void
+    public function test_cashier_can_access_sales_customers_and_inventory(): void
     {
         Role::findOrCreate('cashier');
 
@@ -152,7 +152,11 @@ class SaleStockTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('store.inventory.index'))
-            ->assertForbidden();
+            ->assertOk();
+
+        $this->actingAs($user)
+            ->get(route('store.products.create'))
+            ->assertOk();
     }
 
     public function test_walk_in_name_appears_on_bill_and_print_pages(): void

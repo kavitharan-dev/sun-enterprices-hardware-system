@@ -17,28 +17,28 @@ return [
         'route' => 'store.products.index',
         'active' => ['store.products.*', 'store.categories.*', 'store.brands.*', 'store.units.*'],
         'icon' => 'cube',
-        'roles' => ['admin', 'store_manager'],
+        'roles' => ['admin', 'store_manager', 'cashier'],
     ],
     [
         'label' => 'Suppliers',
         'route' => 'store.suppliers.index',
         'active' => 'store.suppliers.*',
         'icon' => 'users',
-        'roles' => ['admin', 'store_manager'],
+        'roles' => ['admin', 'store_manager', 'cashier'],
     ],
     [
         'label' => 'Purchases',
         'route' => 'store.purchases.index',
         'active' => 'store.purchases.*',
         'icon' => 'truck',
-        'roles' => ['admin', 'store_manager'],
+        'roles' => ['admin', 'store_manager', 'cashier'],
     ],
     [
         'label' => 'Inventory',
         'route' => 'store.inventory.index',
         'active' => 'store.inventory.*',
         'icon' => 'archive',
-        'roles' => ['admin', 'store_manager'],
+        'roles' => ['admin', 'store_manager', 'cashier'],
     ],
     [
         'label' => 'POS',
@@ -73,7 +73,7 @@ return [
         'route' => 'store.material-requests.index',
         'active' => ['store.material-requests.*', 'store.material-issues.*'],
         'icon' => 'clipboard',
-        'roles' => ['admin', 'store_manager'],
+        'roles' => ['admin', 'store_manager', 'cashier'],
     ],
     [
         'label' => 'Construction',
@@ -111,14 +111,14 @@ return [
     [
         'label' => 'Reports',
         'type' => 'heading',
-        'roles' => ['admin', 'store_manager', 'site_manager'],
+        'roles' => ['admin', 'store_manager', 'cashier', 'site_manager'],
     ],
     [
         'label' => 'Reports',
         'route' => 'reports.index',
         'active' => 'reports.*',
         'icon' => 'chart-bar',
-        'roles' => ['admin', 'store_manager', 'site_manager'],
+        'roles' => ['admin', 'store_manager', 'cashier', 'site_manager'],
     ],
     [
         'label' => 'System',

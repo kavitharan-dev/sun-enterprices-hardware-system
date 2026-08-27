@@ -62,7 +62,7 @@ Route::middleware(['auth', 'role:admin|store_manager|cashier'])->prefix('cashier
     Route::delete('daily-accounts/{entry}', [DailyAccountController::class, 'destroy'])->name('daily-accounts.destroy');
 });
 
-Route::middleware(['auth', 'role:admin|store_manager|site_manager'])->prefix('reports')->name('reports.')->group(function () {
+Route::middleware(['auth', 'role:admin|store_manager|cashier|site_manager'])->prefix('reports')->name('reports.')->group(function () {
     Route::get('/', [ReportController::class, 'index'])->name('index');
     Route::get('sales', [ReportController::class, 'sales'])->name('sales');
     Route::get('purchases', [ReportController::class, 'purchases'])->name('purchases');
@@ -74,7 +74,7 @@ Route::middleware(['auth', 'role:admin|store_manager|site_manager'])->prefix('re
     Route::get('issues', [ReportController::class, 'issues'])->name('issues');
 });
 
-Route::middleware(['auth', 'role:admin|store_manager'])->prefix('store')->name('store.')->group(function () {
+Route::middleware(['auth', 'role:admin|store_manager|cashier'])->prefix('store')->name('store.')->group(function () {
     Route::resource('categories', CategoryController::class)->except('show');
     Route::resource('brands', BrandController::class)->except('show');
     Route::resource('units', UnitController::class)->except('show');

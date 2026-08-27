@@ -110,11 +110,12 @@ class AdminAndReportsTest extends TestCase
         $this->actingAs($site)->get(route('reports.sales'))->assertForbidden();
     }
 
-    public function test_cashier_cannot_access_reports(): void
+    public function test_cashier_can_access_reports(): void
     {
         $cashier = $this->userWithRole('cashier');
 
-        $this->actingAs($cashier)->get(route('reports.index'))->assertForbidden();
+        $this->actingAs($cashier)->get(route('reports.index'))->assertOk();
+        $this->actingAs($cashier)->get(route('reports.sales'))->assertOk();
     }
 
     public function test_user_can_open_notification_inbox(): void

@@ -90,12 +90,8 @@ class DashboardController extends Controller
             return view('dashboard.site-manager', compact('stats', 'assignedProjects'));
         }
 
-        if ($user->hasRole('cashier')) {
-            return view('dashboard.cashier', compact('stats'));
-        }
-
-        if ($user->hasRole('store_manager')) {
-            return view('dashboard.store-manager', compact('stats', 'lowStock', 'salesTrend'));
+        if ($user->hasRole('cashier') || $user->hasRole('store_manager')) {
+            return view('dashboard.cashier', compact('stats', 'lowStock', 'salesTrend'));
         }
 
         return view('dashboard.admin', compact('stats', 'lowStock', 'salesTrend', 'recentSales'));

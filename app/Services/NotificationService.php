@@ -200,10 +200,22 @@ class NotificationService
     /**
      * @param  list<string>  $roles
      */
-    private function notifyStaffInApp(string $title, string $body, string $eventType, ?string $url = null, array $roles = ['admin', 'store_manager']): void
+    private function notifyStaffInApp(string $title, string $body, string $eventType, ?string $url = null, array $roles = ['admin', 'store_manager', 'cashier']): void
     {
+        $existingRoles = collect($roles)
+            ->filter(fn (string $role) => \Spatie\Permission\Models\Role::query()
+                ->where('name', $role)
+                ->where('guard_name', 'web')
+                ->exists())
+            ->values()
+            ->all();
+
+        if ($existingRoles === []) {
+            return;
+        }
+
         User::query()
-            ->role($roles)
+            ->role($existingRoles)
             ->where('is_active', true)
             ->get()
             ->each(fn (User $user) => $user->notify(new InAppAlert($title, $body, $eventType, $url)));
@@ -211,8 +223,20 @@ class NotificationService
 
     private function smsStaff(string $message, string $eventType, ?Model $related = null): void
     {
+        $existingRoles = collect(['admin', 'store_manager', 'cashier'])
+            ->filter(fn (string $role) => \Spatie\Permission\Models\Role::query()
+                ->where('name', $role)
+                ->where('guard_name', 'web')
+                ->exists())
+            ->values()
+            ->all();
+
+        if ($existingRoles === []) {
+            return;
+        }
+
         User::query()
-            ->role(['admin', 'store_manager'])
+            ->role($existingRoles)
             ->where('is_active', true)
             ->whereNotNull('phone')
             ->where('phone', '!=', '')
