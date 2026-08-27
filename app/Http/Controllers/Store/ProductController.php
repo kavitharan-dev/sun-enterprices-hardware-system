@@ -27,12 +27,7 @@ class ProductController extends Controller
 
         $products = Product::query()
             ->with(['category', 'brand', 'unit'])
-            ->when($request->filled('q'), function ($query) use ($request) {
-                $term = '%'.$request->string('q').'%';
-                $query->where(function ($inner) use ($term) {
-                    $inner->where('name', 'like', $term)->orWhere('sku', 'like', $term);
-                });
-            })
+            ->when($request->filled('q'), fn ($query) => $query->search($request->string('q')->toString()))
             ->when($request->filled('category_id'), fn ($query) => $query->where('category_id', $request->integer('category_id')))
             ->when($request->boolean('low_stock'), fn ($query) => $query->lowStock())
             ->orderBy('name')

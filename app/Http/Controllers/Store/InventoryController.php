@@ -26,12 +26,7 @@ class InventoryController extends Controller
 
         $products = Product::query()
             ->with(['category', 'unit'])
-            ->when($request->filled('q'), function ($query) use ($request) {
-                $term = '%'.$request->string('q').'%';
-                $query->where(function ($inner) use ($term) {
-                    $inner->where('name', 'like', $term)->orWhere('sku', 'like', $term);
-                });
-            })
+            ->when($request->filled('q'), fn ($query) => $query->search($request->string('q')->toString()))
             ->when($request->boolean('low_stock'), fn ($query) => $query->lowStock())
             ->orderBy('name')
             ->paginate(20)

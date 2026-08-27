@@ -12,7 +12,7 @@
         @include('store.partials.catalog-nav')
 
         <form method="GET" class="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-4">
-            <input type="text" name="q" value="{{ request('q') }}" placeholder="Search name or SKU" class="rounded-lg border-slate-300 text-sm sm:col-span-2">
+            <input type="text" name="q" value="{{ request('q') }}" placeholder="Search by name or barcode / SKU" class="rounded-lg border-slate-300 text-sm sm:col-span-2">
             <x-searchable-select
                 name="category_id"
                 :options="$categories->map(fn ($c) => ['value' => (string) $c->id, 'label' => $c->name, 'search' => $c->name])->values()"

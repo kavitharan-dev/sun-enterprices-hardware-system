@@ -79,6 +79,25 @@ class Product extends Model
         return $query->whereColumn('stock_quantity', '<=', 'min_stock_level');
     }
 
+    /**
+     * Case-insensitive search by product name or SKU/barcode.
+     */
+    public function scopeSearch(Builder $query, ?string $term): Builder
+    {
+        $term = trim((string) $term);
+
+        if ($term === '') {
+            return $query;
+        }
+
+        $like = '%'.mb_strtolower($term).'%';
+
+        return $query->where(function (Builder $inner) use ($like) {
+            $inner->whereRaw('LOWER(name) LIKE ?', [$like])
+                ->orWhereRaw('LOWER(sku) LIKE ?', [$like]);
+        });
+    }
+
     public function formatQuantity(): string
     {
         $qty = rtrim(rtrim(number_format((float) $this->stock_quantity, 3, '.', ''), '0'), '.');

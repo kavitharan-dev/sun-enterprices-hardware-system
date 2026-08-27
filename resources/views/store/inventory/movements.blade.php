@@ -13,11 +13,15 @@
     <form method="GET" class="mb-4 grid gap-3 sm:grid-cols-5">
         <x-searchable-select
             name="product_id"
-            :options="$products->map(fn ($p) => ['value' => (string) $p->id, 'label' => $p->sku.' — '.$p->name, 'search' => $p->sku.' '.$p->name])->values()"
+            :options="$products->map(fn ($p) => [
+                'value' => (string) $p->id,
+                'label' => $p->name.' — '.$p->sku,
+                'search' => $p->name.' '.$p->sku,
+            ])->values()"
             :value="(string) request('product_id')"
             empty-label="All products"
             :allow-empty="true"
-            placeholder="Search product…"
+            placeholder="Type product name or barcode…"
         />
         <x-searchable-select
             name="type"

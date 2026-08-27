@@ -10,7 +10,7 @@
     </x-slot>
 
     <form method="GET" class="mb-4 flex flex-wrap gap-3">
-        <input type="text" name="q" value="{{ request('q') }}" placeholder="Search products" class="rounded-lg border-slate-300 text-sm">
+        <input type="text" name="q" value="{{ request('q') }}" placeholder="Search by name or barcode / SKU" class="min-w-[16rem] rounded-lg border-slate-300 text-sm">
         <label class="flex items-center gap-2 text-sm text-slate-600">
             <input type="checkbox" name="low_stock" value="1" @checked(request()->boolean('low_stock')) class="rounded border-slate-300 text-amber-500">
             Low stock only
@@ -70,9 +70,13 @@
                 <x-input-label for="product_id" value="Product" />
                 <x-searchable-select
                     name="product_id"
-                    :options="$adjustmentProducts->map(fn ($p) => ['value' => (string) $p->id, 'label' => $p->sku.' — '.$p->name, 'search' => $p->sku.' '.$p->name])->values()"
+                    :options="$adjustmentProducts->map(fn ($p) => [
+                        'value' => (string) $p->id,
+                        'label' => $p->name.' — '.$p->sku,
+                        'search' => $p->name.' '.$p->sku,
+                    ])->values()"
                     :value="(string) old('product_id')"
-                    placeholder="Search product…"
+                    placeholder="Type product name or barcode…"
                     empty-label="Select product"
                     :allow-empty="false"
                     :required="true"
