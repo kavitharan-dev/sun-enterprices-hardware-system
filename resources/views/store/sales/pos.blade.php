@@ -154,13 +154,16 @@
                     <div>
                         <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Customer</label>
                         <input type="hidden" name="customer_id" :value="customerId">
+                        <input type="hidden" name="walk_in_name" :value="effectiveWalkInName">
                         <div class="relative mt-2">
                             <input
                                 type="text"
                                 x-model="customerQuery"
-                                x-on:focus="customerOpen = true"
+                                x-on:focus="openCustomerList()"
+                                x-on:click="openCustomerList()"
+                                x-on:input="customerOpen = true; customerBrowsing = false"
                                 class="block w-full rounded-xl border-slate-300 px-3 py-2.5 text-sm focus:border-amber-500 focus:ring-amber-500"
-                                placeholder="Search registered customer…"
+                                placeholder="Click to choose registered customer…"
                                 autocomplete="off"
                             >
                             <button
@@ -174,9 +177,11 @@
                                 x-show="customerOpen"
                                 x-cloak
                                 x-on:click.outside="customerOpen = false"
-                                class="absolute z-30 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg"
+                                class="absolute z-40 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg"
                             >
-                                <button type="button" class="block w-full px-3 py-2.5 text-left text-sm text-slate-500 hover:bg-amber-50" x-on:click="clearCustomer(); customerOpen = false">Walk-in customer</button>
+                                <button type="button" class="block w-full px-3 py-2.5 text-left text-sm text-slate-500 hover:bg-amber-50" x-on:click="clearCustomer(); customerOpen = false">
+                                    Walk-in (auto name on bill)
+                                </button>
                                 <template x-for="c in filteredCustomers" :key="c.id">
                                     <button
                                         type="button"
@@ -187,18 +192,18 @@
                                         <span class="block text-xs text-slate-500" x-text="c.phone || ''"></span>
                                     </button>
                                 </template>
+                                <p x-show="filteredCustomers.length === 0" class="px-3 py-3 text-sm text-slate-400">No customers found</p>
                             </div>
                         </div>
                         <p x-show="customerId" x-cloak class="mt-1 text-sm font-medium text-emerald-800" x-text="selectedCustomerLabel"></p>
                         <div x-show="!customerId" x-cloak class="mt-2">
                             <input
                                 type="text"
-                                name="walk_in_name"
                                 x-model="walkInName"
                                 class="block w-full rounded-xl border-slate-300 px-3 py-2.5 text-sm"
-                                placeholder="Walk-in name on bill"
-                                x-bind:required="!customerId"
+                                placeholder="Name on bill (optional — defaults to Walk-in Customer)"
                             >
+                            <p class="mt-1 text-xs text-slate-500">If left empty, bill uses <span class="font-medium">Walk-in Customer</span>.</p>
                         </div>
                     </div>
 
@@ -207,15 +212,10 @@
                         <input id="sale_date" name="sale_date" type="date" value="{{ old('sale_date', now()->toDateString()) }}" required class="mt-2 block w-full rounded-xl border-slate-300 text-sm">
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label for="discount" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Discount</label>
-                            <input id="discount" name="discount" type="number" step="0.01" min="0" x-model.number="discount" class="mt-2 block w-full rounded-xl border-slate-300 text-sm">
-                        </div>
-                        <div>
-                            <label for="tax" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Tax</label>
-                            <input id="tax" name="tax" type="number" step="0.01" min="0" x-model.number="tax" class="mt-2 block w-full rounded-xl border-slate-300 text-sm">
-                        </div>
+                    <div>
+                        <label for="discount" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Discount (Rs.)</label>
+                        <input id="discount" name="discount" type="number" step="0.01" min="0" x-model.number="discount" class="mt-2 block w-full rounded-xl border-slate-300 text-sm">
+                        <input type="hidden" name="tax" value="0">
                     </div>
 
                     <div class="rounded-2xl bg-gradient-to-br from-walnut-900 to-walnut-800 px-4 py-4 text-white shadow-inner">
@@ -302,6 +302,7 @@
                     walkInName: @json((string) old('walk_in_name', '')),
                     customerQuery: '',
                     customerOpen: false,
+                    customerBrowsing: false,
                     productQuery: '',
                     productOpen: false,
                     productHighlight: 0,
@@ -314,7 +315,7 @@
                     ],
                     tendered: {{ (float) old('payment_amount', 0) }},
                     discount: {{ (float) old('discount', 0) }},
-                    tax: {{ (float) old('tax', 0) }},
+                    tax: 0,
                     scan: '',
                     scanMessage: '',
                     scanOk: false,
@@ -325,6 +326,13 @@
                     focusScan() {
                         this.$nextTick(() => this.$refs.scan && this.$refs.scan.focus());
                     },
+                    get effectiveWalkInName() {
+                        if (this.customerId) {
+                            return '';
+                        }
+                        const name = String(this.walkInName || '').trim();
+                        return name !== '' ? name : 'Walk-in Customer';
+                    },
                     get filteredProducts() {
                         const q = this.productQuery.trim().toLowerCase();
                         if (!q) return [];
@@ -333,15 +341,22 @@
                         }).slice(0, 40);
                     },
                     get filteredCustomers() {
-                        const q = this.customerQuery.trim().toLowerCase();
-                        if (!q) return this.customers.slice(0, 30);
-                        return this.customers.filter((c) => {
-                            return (c.name + ' ' + (c.phone || '')).toLowerCase().includes(q);
-                        }).slice(0, 30);
+                        const q = this.customerBrowsing ? '' : this.customerQuery.trim().toLowerCase();
+                        const list = !q
+                            ? this.customers
+                            : this.customers.filter((c) => {
+                                return (c.name + ' ' + (c.phone || '')).toLowerCase().includes(q);
+                            });
+                        return list.slice(0, 80);
                     },
                     get selectedCustomerLabel() {
                         const c = this.customers.find((x) => String(x.id) === String(this.customerId));
                         return c ? (c.name + (c.phone ? ' · ' + c.phone : '')) : '';
+                    },
+                    openCustomerList() {
+                        this.customerOpen = true;
+                        this.customerBrowsing = true;
+                        this.customerQuery = '';
                     },
                     highlightProduct(dir) {
                         const max = this.filteredProducts.length - 1;
@@ -363,11 +378,13 @@
                         this.customerId = String(c.id);
                         this.customerQuery = c.name;
                         this.walkInName = '';
+                        this.customerBrowsing = false;
                         this.customerOpen = false;
                     },
                     clearCustomer() {
                         this.customerId = '';
                         this.customerQuery = '';
+                        this.customerBrowsing = false;
                     },
                     prepareSubmit(e) {
                         if (this.items.length === 0) {
@@ -375,6 +392,10 @@
                             this.scanMessage = 'Add at least one product.';
                             this.scanOk = false;
                             this.focusScan();
+                            return;
+                        }
+                        if (! this.customerId && ! String(this.walkInName || '').trim()) {
+                            this.walkInName = 'Walk-in Customer';
                         }
                     },
                     findProduct(code) {
