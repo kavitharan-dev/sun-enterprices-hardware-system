@@ -28,6 +28,10 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        if ($request->user()?->hasRole('cashier')) {
+            $request->session()->flash('cashier_welcome', true);
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

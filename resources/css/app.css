@@ -183,3 +183,54 @@ button.btn-danger-outline:hover,
     background-color: #fee4e2;
     color: #912018;
 }
+
+.font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.02em;
+}
+
+.cashier-welcome__backdrop {
+    background:
+        radial-gradient(ellipse at 30% 20%, rgba(232, 184, 74, 0.35), transparent 45%),
+        radial-gradient(ellipse at 70% 80%, rgba(92, 64, 12, 0.2), transparent 50%),
+        rgba(28, 21, 16, 0.55);
+}
+
+.cashier-balloon {
+    position: absolute;
+    bottom: -4rem;
+    width: var(--balloon-size, 2.4rem);
+    height: calc(var(--balloon-size, 2.4rem) * 1.25);
+    border-radius: 50% 50% 50% 50% / 45% 45% 55% 55%;
+    background: radial-gradient(circle at 30% 28%, #ffffffcc, var(--balloon-color, #e8b84a) 55%);
+    box-shadow: inset -6px -10px 16px rgba(0, 0, 0, 0.12);
+    animation-name: cashier-balloon-float;
+    animation-timing-function: ease-in;
+    animation-fill-mode: forwards;
+    opacity: 0;
+}
+
+.cashier-balloon::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 96%;
+    width: 1.5px;
+    height: 2.4rem;
+    background: rgba(42, 33, 24, 0.45);
+    transform: translateX(-50%);
+}
+
+@keyframes cashier-balloon-float {
+    0% {
+        transform: translate3d(0, 0, 0) rotate(-6deg);
+        opacity: 0;
+    }
+    12% {
+        opacity: 1;
+    }
+    100% {
+        transform: translate3d(12px, -115vh, 0) rotate(8deg);
+        opacity: 0.15;
+    }
+}

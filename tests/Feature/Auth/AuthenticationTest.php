@@ -53,4 +53,40 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
         $response->assertRedirect('/');
     }
+
+    public function test_cashier_login_shows_welcome_with_their_name(): void
+    {
+        \Spatie\Permission\Models\Role::findOrCreate('cashier');
+
+        $user = User::factory()->create(['name' => 'Kasun Perera']);
+        $user->assignRole('cashier');
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertRedirect(route('dashboard', absolute: false));
+
+        $this->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Welcome back')
+            ->assertSee('Kasun Perera')
+            ->assertSee('cashier-welcome', false);
+    }
+
+    public function test_non_cashier_login_does_not_flash_welcome(): void
+    {
+        \Spatie\Permission\Models\Role::findOrCreate('admin');
+
+        $user = User::factory()->create(['name' => 'Admin User']);
+        $user->assignRole('admin');
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertRedirect(route('dashboard', absolute: false));
+
+        $this->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('cashier-welcome', false);
+    }
 }
