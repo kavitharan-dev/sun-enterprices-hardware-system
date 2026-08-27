@@ -2,10 +2,11 @@
 
 <button
     type="button"
+    x-ref="trigger"
     x-on:click="toggle()"
     x-on:keydown="onKeydown($event)"
     :disabled="disabled"
-    class="flex w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-left text-sm shadow-sm hover:border-amber-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:cursor-not-allowed disabled:bg-slate-50"
+    class="flex w-full min-h-[2.5rem] items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-left text-sm shadow-sm hover:border-amber-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:cursor-not-allowed disabled:bg-slate-50"
     :class="open ? 'border-amber-500 ring-1 ring-amber-500' : ''"
 >
     <span class="truncate" :class="value ? 'text-slate-900' : 'text-slate-400'" x-text="selectedLabel"></span>
@@ -19,9 +20,10 @@
     x-show="open"
     x-cloak
     x-transition.opacity.duration.100ms
-    class="absolute left-0 right-0 z-[200] mt-1 max-h-60 overflow-hidden rounded-md border border-slate-200 bg-white shadow-xl"
+    x-bind:style="panelStyle"
+    class="flex flex-col overflow-hidden rounded-md border border-slate-200 bg-white shadow-2xl"
 >
-    <div class="border-b border-slate-100 p-2">
+    <div class="shrink-0 border-b border-slate-100 p-2">
         <input
             x-ref="search"
             type="text"
@@ -32,17 +34,17 @@
             autocomplete="off"
         >
     </div>
-    <ul class="max-h-56 overflow-y-auto py-1 text-sm">
+    <ul class="min-h-[8rem] flex-1 overflow-y-auto py-1 text-sm">
         <template x-if="allowEmpty">
             <li>
-                <button type="button" class="flex w-full px-3 py-2 text-left text-slate-500 hover:bg-amber-50" x-on:click="clear()" x-text="emptyLabel"></button>
+                <button type="button" class="flex w-full px-3 py-2.5 text-left text-slate-500 hover:bg-amber-50" x-on:click="clear()" x-text="emptyLabel"></button>
             </li>
         </template>
         <template x-for="(opt, i) in filtered" :key="opt.value + '-' + i">
             <li>
                 <button
                     type="button"
-                    class="flex w-full px-3 py-2 text-left hover:bg-amber-50"
+                    class="flex w-full px-3 py-2.5 text-left whitespace-normal break-words leading-snug hover:bg-amber-50"
                     :class="String(opt.value) === String(value) ? 'bg-amber-50 font-medium text-amber-900' : (highlighted === i ? 'bg-slate-50' : 'text-slate-800')"
                     x-on:click="select(opt)"
                     x-on:mouseenter="highlighted = i"
@@ -50,6 +52,6 @@
                 ></button>
             </li>
         </template>
-        <li x-show="filtered.length === 0" class="px-3 py-2 text-slate-400">No matches</li>
+        <li x-show="filtered.length === 0" class="px-3 py-3 text-slate-400">No matches</li>
     </ul>
 </div>

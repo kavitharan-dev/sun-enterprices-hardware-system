@@ -67,16 +67,16 @@
             </div>
         </div>
 
-        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div class="flex items-center justify-between border-b px-5 py-3">
                 <h3 class="font-semibold text-slate-800">Line items</h3>
                 <button type="button" x-on:click="addItem()" class="btn btn-secondary btn-sm">Add line</button>
             </div>
-            <div class="overflow-x-auto">
+            <div class="p-1 sm:p-0">
                 <table class="min-w-full text-sm">
                     <thead class="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
                         <tr>
-                            <th class="px-4 py-3">Product</th>
+                            <th class="px-4 py-3 min-w-[18rem]">Product</th>
                             <th class="px-4 py-3 w-28">Qty</th>
                             <th class="px-4 py-3 w-36">Unit cost</th>
                             <th class="px-4 py-3 w-32 text-right">Subtotal</th>
@@ -85,9 +85,10 @@
                     </thead>
                     <tbody>
                         <template x-for="(item, index) in items" :key="index">
-                            <tr class="border-t">
-                                <td class="px-4 py-3">
+                            <tr class="border-t align-top">
+                                <td class="px-4 py-3 min-w-[18rem]">
                                     <div class="relative"
+                                        :class="open ? 'z-[60]' : ''"
                                         x-data="searchableSelect({
                                             options: productSelectOptions,
                                             value: item.product_id,
@@ -95,7 +96,7 @@
                                             required: true,
                                             allowEmpty: true,
                                             emptyLabel: 'Select product',
-                                            placeholder: 'Search product…',
+                                            placeholder: 'Type name or barcode…',
                                             onChange: function (v) { item.product_id = v; applyProduct(item); },
                                             getValue: function () { return item.product_id; },
                                         })"
