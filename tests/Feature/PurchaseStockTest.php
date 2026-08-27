@@ -138,12 +138,18 @@ class PurchaseStockTest extends TestCase
             ->get(route('store.inventory.index', ['q' => 'asian paint']))
             ->assertOk()
             ->assertSee('Asian Paint White')
-            ->assertSee('8901234567890')
-            ->assertDontSee('Other Product');
+            ->assertSee('8901234567890');
 
         $this->actingAs($user)
             ->get(route('store.inventory.index', ['q' => '8901234567890']))
             ->assertOk()
             ->assertSee('Asian Paint White');
+
+        $this->assertSame(
+            1,
+            Product::query()->search('asian paint')->count(),
+            'Name search should return only matching products'
+        );
+        $this->assertSame(0, Product::query()->search('asian paint')->where('name', 'Other Product')->count());
     }
 }
