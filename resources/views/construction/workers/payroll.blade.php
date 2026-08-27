@@ -98,12 +98,16 @@
                                 <td class="whitespace-nowrap px-4 py-3">{{ $day->dayName() }}</td>
                                 <td class="px-4 py-3">
                                     @if ($editable)
-                                        <select name="project_id" form="day-{{ $day->id }}" class="w-44 rounded-md border-gray-300 text-sm">
-                                            <option value="">Not on a site</option>
-                                            @foreach ($projects as $project)
-                                                <option value="{{ $project->id }}" @selected($day->project_id == $project->id)>{{ $project->name }}</option>
-                                            @endforeach
-                                        </select>
+                                        <x-searchable-select
+                                            name="project_id"
+                                            :form="'day-'.$day->id"
+                                            :options="$projects->map(fn ($p) => ['value' => (string) $p->id, 'label' => $p->name, 'search' => $p->name])->values()"
+                                            :value="(string) ($day->project_id ?? '')"
+                                            empty-label="Not on a site"
+                                            :allow-empty="true"
+                                            placeholder="Search project…"
+                                            class="w-44"
+                                        />
                                     @elseif ($day->project)
                                         <a href="{{ route('construction.projects.show', $day->project) }}" class="font-medium text-amber-700">{{ $day->project->name }}</a>
                                     @else
@@ -180,12 +184,15 @@
                         </div>
                         <div>
                             <x-input-label for="work_day_project" value="Project / Site" />
-                            <select id="work_day_project" name="project_id" class="mt-1 block w-full rounded-md border-gray-300">
-                                <option value="">Not on a site</option>
-                                @foreach ($projects as $project)
-                                    <option value="{{ $project->id }}" @selected(old('project_id') == $project->id)>{{ $project->name }}</option>
-                                @endforeach
-                            </select>
+                            <x-searchable-select
+                                name="project_id"
+                                :options="$projects->map(fn ($p) => ['value' => (string) $p->id, 'label' => $p->name, 'search' => $p->name])->values()"
+                                :value="(string) old('project_id')"
+                                empty-label="Not on a site"
+                                :allow-empty="true"
+                                placeholder="Search project…"
+                                class="mt-1"
+                            />
                         </div>
                         <div>
                             <x-input-label for="daily_amount" value="Day salary (Rs.)" />
@@ -293,12 +300,15 @@
                         <div class="grid gap-3 sm:grid-cols-2">
                             <div>
                                 <x-input-label for="advance_project" value="Site (optional)" />
-                                <select id="advance_project" name="project_id" class="mt-1 block w-full rounded-md border-gray-300">
-                                    <option value="">—</option>
-                                    @foreach ($projects as $project)
-                                        <option value="{{ $project->id }}" @selected(old('project_id') == $project->id)>{{ $project->name }}</option>
-                                    @endforeach
-                                </select>
+                                <x-searchable-select
+                                    name="project_id"
+                                    :options="$projects->map(fn ($p) => ['value' => (string) $p->id, 'label' => $p->name, 'search' => $p->name])->values()"
+                                    :value="(string) old('project_id')"
+                                    empty-label="—"
+                                    :allow-empty="true"
+                                    placeholder="Search project…"
+                                    class="mt-1"
+                                />
                             </div>
                             <div>
                                 <x-input-label for="advance_notes" value="Notes" />

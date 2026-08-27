@@ -11,18 +11,22 @@
     </x-slot>
 
     <form method="GET" class="mb-4 grid gap-3 sm:grid-cols-5">
-        <select name="product_id" class="rounded-lg border-slate-300 text-sm">
-            <option value="">All products</option>
-            @foreach ($products as $product)
-                <option value="{{ $product->id }}" @selected(request('product_id') == $product->id)>{{ $product->sku }} — {{ $product->name }}</option>
-            @endforeach
-        </select>
-        <select name="type" class="rounded-lg border-slate-300 text-sm">
-            <option value="">All types</option>
-            @foreach (MovementType::cases() as $type)
-                <option value="{{ $type->value }}" @selected(request('type') === $type->value)>{{ $type->label() }}</option>
-            @endforeach
-        </select>
+        <x-searchable-select
+            name="product_id"
+            :options="$products->map(fn ($p) => ['value' => (string) $p->id, 'label' => $p->sku.' — '.$p->name, 'search' => $p->sku.' '.$p->name])->values()"
+            :value="(string) request('product_id')"
+            empty-label="All products"
+            :allow-empty="true"
+            placeholder="Search product…"
+        />
+        <x-searchable-select
+            name="type"
+            :options="collect(MovementType::cases())->map(fn ($t) => ['value' => $t->value, 'label' => $t->label()])->values()"
+            :value="(string) request('type')"
+            empty-label="All types"
+            :allow-empty="true"
+            placeholder="Search type…"
+        />
         <input type="date" name="from" value="{{ request('from') }}" class="rounded-lg border-slate-300 text-sm">
         <input type="date" name="to" value="{{ request('to') }}" class="rounded-lg border-slate-300 text-sm">
         <button class="btn btn-dark">Filter</button>

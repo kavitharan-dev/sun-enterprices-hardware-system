@@ -5,14 +5,21 @@
 
     <form method="GET" class="mb-4 grid gap-3 sm:grid-cols-3">
         <input type="text" name="q" value="{{ request('q') }}" placeholder="Request no, project or product" class="rounded-lg border-slate-300 text-sm">
-        <select name="status" class="rounded-lg border-slate-300 text-sm">
-            <option value="pending" @selected(request('status', 'pending') === 'pending')>Pending review</option>
-            <option value="all" @selected(request('status') === 'all')>All statuses</option>
-            @foreach (App\Enums\MaterialRequestStatus::cases() as $status)
-                @continue($status->value === 'pending')
-                <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
-            @endforeach
-        </select>
+        <x-searchable-select
+            name="status"
+            :options="collect([
+                ['value' => 'pending', 'label' => 'Pending review'],
+                ['value' => 'all', 'label' => 'All statuses'],
+            ])->merge(
+                collect(App\Enums\MaterialRequestStatus::cases())
+                    ->reject(fn ($s) => $s->value === 'pending')
+                    ->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()])
+            )->values()"
+            :value="(string) request('status', 'pending')"
+            empty-label="Pending review"
+            :allow-empty="false"
+            placeholder="Search status…"
+        />
         <button class="btn btn-dark">Filter</button>
     </form>
 

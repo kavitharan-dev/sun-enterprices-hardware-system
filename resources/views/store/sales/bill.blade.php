@@ -6,7 +6,8 @@
                 <p class="text-sm text-slate-500">{{ $sale->customerName() }} · {{ $sale->sale_date->format('d/m/Y') }}</p>
             </div>
             <div class="no-print flex flex-wrap gap-2">
-                <a href="{{ route('store.sales.create') }}" class="btn btn-success">New sale</a>
+                <a href="{{ route('store.sales.pos') }}" class="btn btn-success">New sale</a>
+                <a href="{{ route('store.sales.thermal', $sale) }}" class="btn btn-primary">Thermal print</a>
                 <button type="button" onclick="window.print()" class="btn btn-primary">Print bill</button>
                 <a href="{{ route('store.sales.print', $sale) }}" class="btn btn-dark">Printer page</a>
                 <a href="{{ route('store.sales.invoice', $sale) }}" target="_blank" class="btn btn-secondary">PDF</a>

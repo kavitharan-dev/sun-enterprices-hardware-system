@@ -3,13 +3,17 @@
         <h2 class="text-xl font-semibold text-slate-800">SMS Logs</h2>
     </x-slot>
 
-    <form method="GET" class="mb-4">
-        <select name="status" onchange="this.form.submit()" class="rounded-lg border-slate-300 text-sm">
-            <option value="">All statuses</option>
-            @foreach (['queued','sending','sent','delivered','failed','skipped'] as $status)
-                <option value="{{ $status }}" @selected(request('status') === $status)>{{ ucfirst($status) }}</option>
-            @endforeach
-        </select>
+    <form method="GET" class="mb-4 flex flex-wrap items-center gap-3">
+        <x-searchable-select
+            name="status"
+            :options="collect(['queued','sending','sent','delivered','failed','skipped'])->map(fn ($s) => ['value' => $s, 'label' => ucfirst($s)])->values()"
+            :value="(string) request('status')"
+            empty-label="All statuses"
+            :allow-empty="true"
+            placeholder="Search status…"
+            class="min-w-48"
+        />
+        <button class="btn btn-dark">Filter</button>
     </form>
 
     <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">

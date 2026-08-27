@@ -9,7 +9,8 @@
                 <x-status-badge :status="$sale->status" />
                 <x-status-badge :status="$sale->payment_status" />
                 @if ($sale->isCompleted())
-                    <a href="{{ route('store.sales.create') }}" class="btn btn-success">New sale</a>
+                    <a href="{{ route('store.sales.pos') }}" class="btn btn-success">New sale</a>
+                    <a href="{{ route('store.sales.thermal', $sale) }}" class="btn btn-primary">Thermal print</a>
                     <a href="{{ route('store.sales.bill', $sale) }}" class="btn btn-primary">View bill</a>
                     <a href="{{ route('store.sales.print', $sale) }}" class="btn btn-dark">Print invoice</a>
                     <a href="{{ route('store.sales.invoice', $sale) }}" target="_blank" class="btn btn-secondary">PDF</a>
@@ -69,12 +70,26 @@
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <x-input-label for="payment_method" value="Payment method" />
-                        <select id="payment_method" name="payment_method" x-model="method" class="mt-1 block w-full rounded-md border-gray-300">
-                            <option value="cash">Cash</option>
-                            <option value="card">Card</option>
-                            <option value="bank_transfer">Bank Transfer</option>
-                            <option value="credit">Credit (pay later)</option>
-                        </select>
+                        <div class="relative mt-1"
+                            x-data="searchableSelect({
+                                options: [
+                                    { value: 'cash', label: 'Cash' },
+                                    { value: 'card', label: 'Card' },
+                                    { value: 'bank_transfer', label: 'Bank Transfer' },
+                                    { value: 'credit', label: 'Credit (pay later)' },
+                                ],
+                                value: 'cash',
+                                name: 'payment_method',
+                                allowEmpty: false,
+                                emptyLabel: 'Cash',
+                                placeholder: 'Payment method',
+                                onChange: (v) => { method = v; },
+                                getValue: () => method,
+                            })"
+                            @click.outside="open = false"
+                        >
+                            @include('components.partials.searchable-select-inner')
+                        </div>
                     </div>
                     <div x-show="method !== 'credit'">
                         <x-input-label for="payment_amount" value="Amount customer paid (Rs.)" />
@@ -105,7 +120,8 @@
 
         @if ($sale->isCompleted())
             <div class="flex flex-wrap gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                    <a href="{{ route('store.sales.create') }}" class="btn btn-success">New sale</a>
+                    <a href="{{ route('store.sales.pos') }}" class="btn btn-success">New sale</a>
+                    <a href="{{ route('store.sales.thermal', $sale) }}" class="btn btn-primary">Thermal print</a>
                     <a href="{{ route('store.sales.bill', $sale) }}" class="btn btn-primary">View bill</a>
                     <a href="{{ route('store.sales.print', $sale) }}" class="btn btn-dark">Print invoice</a>
                 <a href="{{ route('store.sales.invoice', $sale) }}" target="_blank" class="btn btn-secondary">View PDF</a>
@@ -123,11 +139,20 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <x-input-label for="payment_method" value="Method" />
-                            <select id="payment_method" name="payment_method" class="mt-1 block w-full rounded-md border-gray-300" required>
-                                <option value="cash">Cash</option>
-                                <option value="card">Card</option>
-                                <option value="bank_transfer">Bank Transfer</option>
-                            </select>
+                            <x-searchable-select
+                                name="payment_method"
+                                :options="[
+                                    ['value' => 'cash', 'label' => 'Cash'],
+                                    ['value' => 'card', 'label' => 'Card'],
+                                    ['value' => 'bank_transfer', 'label' => 'Bank Transfer'],
+                                ]"
+                                :value="(string) old('payment_method', 'cash')"
+                                empty-label="Cash"
+                                :allow-empty="false"
+                                :required="true"
+                                placeholder="Payment method"
+                                class="mt-1"
+                            />
                         </div>
                         <div>
                             <x-input-label for="payment_date" value="Date" />

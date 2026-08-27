@@ -8,11 +8,17 @@
 
     <form method="GET" class="mb-4 grid gap-3 sm:grid-cols-3">
         <input type="text" name="q" value="{{ request('q') }}" placeholder="Name, code, phone or NIC" class="rounded-lg border-slate-300 text-sm">
-        <select name="status" class="rounded-lg border-slate-300 text-sm">
-            <option value="">All statuses</option>
-            <option value="active" @selected(request('status') === 'active')>Active</option>
-            <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
-        </select>
+        <x-searchable-select
+            name="status"
+            :options="[
+                ['value' => 'active', 'label' => 'Active'],
+                ['value' => 'inactive', 'label' => 'Inactive'],
+            ]"
+            :value="(string) request('status')"
+            empty-label="All statuses"
+            :allow-empty="true"
+            placeholder="Search status…"
+        />
         <button class="btn btn-dark">Filter</button>
     </form>
 

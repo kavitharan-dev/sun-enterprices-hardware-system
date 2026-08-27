@@ -25,7 +25,8 @@
     @endif
     <div class="no-print" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;align-items:center;">
         <button type="button" onclick="window.print()" style="padding:10px 16px;font-weight:700;background:#f59e0b;color:#0f172a;border:0;border-radius:8px;cursor:pointer;">Print bill</button>
-        <a href="{{ route('store.sales.create') }}" style="padding:10px 16px;font-weight:700;background:#2f6b4f;color:#fff;border-radius:8px;text-decoration:none;">New sale</a>
+        <a href="{{ route('store.sales.thermal', $sale) }}" style="padding:10px 16px;font-weight:700;background:#f59e0b;color:#0f172a;border-radius:8px;text-decoration:none;">Thermal print</a>
+        <a href="{{ $nextUrl ?? route('store.sales.pos') }}" style="padding:10px 16px;font-weight:700;background:#2f6b4f;color:#fff;border-radius:8px;text-decoration:none;">New sale</a>
         <a href="{{ route('store.sales.bill', $sale) }}" style="padding:10px 16px;font-weight:700;background:#fff;color:#1c1510;border:1px solid #d4b896;border-radius:8px;text-decoration:none;">Stay on bill</a>
         <a href="{{ route('store.sales.index') }}" style="padding:10px 16px;font-weight:600;color:#5c400c;text-decoration:none;">All sales</a>
         @if (! empty($goToNewSale))
@@ -107,7 +108,7 @@
 
     @if (! empty($goToNewSale))
         <script>
-            const nextSaleUrl = @json(route('store.sales.create'));
+            const nextSaleUrl = @json($nextUrl ?? route('store.sales.pos'));
             let movedOn = false;
 
             function goToNewSale() {

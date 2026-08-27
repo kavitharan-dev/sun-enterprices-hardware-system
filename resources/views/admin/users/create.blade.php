@@ -23,11 +23,16 @@
         </div>
         <div>
             <x-input-label for="role" value="Role" />
-            <select id="role" name="role" class="mt-1 block w-full rounded-md border-gray-300" required>
-                @foreach ($roles as $role)
-                    <option value="{{ $role }}" @selected(old('role', isset($user) ? $user->getRoleNames()->first() : '') === $role)>{{ str_replace('_', ' ', $role) }}</option>
-                @endforeach
-            </select>
+            <x-searchable-select
+                name="role"
+                :options="collect($roles)->map(fn ($r) => ['value' => $r, 'label' => str_replace('_', ' ', $r)])->values()"
+                :value="(string) old('role', isset($user) ? $user->getRoleNames()->first() : '')"
+                empty-label="Select role"
+                :allow-empty="false"
+                :required="true"
+                placeholder="Search role…"
+                class="mt-1"
+            />
         </div>
         <div>
             <x-input-label for="password" :value="isset($user) ? 'New password (leave blank to keep)' : 'Password'" />

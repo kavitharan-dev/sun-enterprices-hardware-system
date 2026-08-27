@@ -8,17 +8,25 @@
 
     <form method="GET" class="mb-4 grid gap-3 sm:grid-cols-4">
         <input type="text" name="q" value="{{ request('q') }}" placeholder="Name, email or phone" class="rounded-lg border-slate-300 text-sm">
-        <select name="role" class="rounded-lg border-slate-300 text-sm">
-            <option value="">All roles</option>
-            @foreach ($roles as $role)
-                <option value="{{ $role }}" @selected(request('role') === $role)>{{ str_replace('_', ' ', $role) }}</option>
-            @endforeach
-        </select>
-        <select name="status" class="rounded-lg border-slate-300 text-sm">
-            <option value="">All statuses</option>
-            <option value="active" @selected(request('status') === 'active')>Active</option>
-            <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
-        </select>
+        <x-searchable-select
+            name="role"
+            :options="collect($roles)->map(fn ($r) => ['value' => $r, 'label' => str_replace('_', ' ', $r)])->values()"
+            :value="(string) request('role')"
+            empty-label="All roles"
+            :allow-empty="true"
+            placeholder="Search role…"
+        />
+        <x-searchable-select
+            name="status"
+            :options="[
+                ['value' => 'active', 'label' => 'Active'],
+                ['value' => 'inactive', 'label' => 'Inactive'],
+            ]"
+            :value="(string) request('status')"
+            empty-label="All statuses"
+            :allow-empty="true"
+            placeholder="Search status…"
+        />
         <button class="btn btn-dark">Filter</button>
     </form>
 

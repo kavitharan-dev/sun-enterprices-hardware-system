@@ -13,12 +13,14 @@
 
         <form method="GET" class="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-4">
             <input type="text" name="q" value="{{ request('q') }}" placeholder="Search name or SKU" class="rounded-lg border-slate-300 text-sm sm:col-span-2">
-            <select name="category_id" class="rounded-lg border-slate-300 text-sm">
-                <option value="">All categories</option>
-                @foreach ($categories as $category)
-                    <option value="{{ $category->id }}" @selected(request('category_id') == $category->id)>{{ $category->name }}</option>
-                @endforeach
-            </select>
+            <x-searchable-select
+                name="category_id"
+                :options="$categories->map(fn ($c) => ['value' => (string) $c->id, 'label' => $c->name, 'search' => $c->name])->values()"
+                :value="(string) request('category_id')"
+                empty-label="All categories"
+                :allow-empty="true"
+                placeholder="Search category…"
+            />
             <div class="flex items-center gap-3">
                 <label class="flex items-center gap-2 text-sm text-slate-600">
                     <input type="checkbox" name="low_stock" value="1" @checked(request()->boolean('low_stock')) class="rounded border-slate-300 text-amber-500">

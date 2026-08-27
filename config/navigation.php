@@ -41,9 +41,16 @@ return [
         'roles' => ['admin', 'store_manager'],
     ],
     [
+        'label' => 'POS',
+        'route' => 'store.sales.pos',
+        'active' => 'store.sales.pos',
+        'icon' => 'shopping-cart',
+        'roles' => ['admin', 'store_manager', 'cashier'],
+    ],
+    [
         'label' => 'Sales',
         'route' => 'store.sales.index',
-        'active' => 'store.sales.*',
+        'active' => ['store.sales.index', 'store.sales.create', 'store.sales.show', 'store.sales.edit', 'store.sales.bill', 'store.sales.print', 'store.sales.thermal', 'store.sales.invoice*'],
         'icon' => 'shopping-cart',
         'roles' => ['admin', 'store_manager', 'cashier'],
     ],

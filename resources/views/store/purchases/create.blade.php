@@ -7,6 +7,12 @@
         'unit' => $p->unit?->symbol,
     ])->values();
 
+    $supplierOptions = $suppliers->map(fn ($s) => [
+        'value' => (string) $s->id,
+        'label' => $s->name,
+        'search' => $s->name,
+    ])->values();
+
     $existingItems = old('items', isset($purchase)
         ? $purchase->items->map(fn ($item) => [
             'product_id' => (string) $item->product_id,
@@ -34,12 +40,16 @@
         <div class="grid gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:grid-cols-3">
             <div>
                 <x-input-label for="supplier_id" value="Supplier" />
-                <select id="supplier_id" name="supplier_id" class="mt-1 block w-full rounded-md border-gray-300" required>
-                    <option value="">Select supplier</option>
-                    @foreach ($suppliers as $supplier)
-                        <option value="{{ $supplier->id }}" @selected(old('supplier_id', $purchase->supplier_id ?? '') == $supplier->id)>{{ $supplier->name }}</option>
-                    @endforeach
-                </select>
+                <x-searchable-select
+                    name="supplier_id"
+                    :options="$supplierOptions"
+                    :value="(string) old('supplier_id', $purchase->supplier_id ?? '')"
+                    placeholder="Search supplier…"
+                    empty-label="Select supplier"
+                    :allow-empty="false"
+                    :required="true"
+                    class="mt-1"
+                />
             </div>
             <div>
                 <x-input-label for="purchase_date" value="Purchase date" />
@@ -71,12 +81,26 @@
                         <template x-for="(item, index) in items" :key="index">
                             <tr class="border-t">
                                 <td class="px-4 py-3">
-                                    <select :name="'items['+index+'][product_id]'" x-model="item.product_id" @change="applyProduct(item)" class="w-full rounded-md border-gray-300 text-sm" required>
-                                        <option value="">Select product</option>
-                                        <template x-for="product in products" :key="product.id">
-                                            <option :value="product.id" x-text="product.sku + ' — ' + product.name" :selected="item.product_id == product.id"></option>
-                                        </template>
-                                    </select>
+                                    <div class="relative"
+                                        x-data="searchableSelect({
+                                            options: products.map(p => ({
+                                                value: String(p.id),
+                                                label: p.sku + ' — ' + p.name,
+                                                search: p.sku + ' ' + p.name,
+                                            })),
+                                            value: item.product_id,
+                                            name: () => 'items[' + index + '][product_id]',
+                                            required: true,
+                                            allowEmpty: true,
+                                            emptyLabel: 'Select product',
+                                            placeholder: 'Search product…',
+                                            onChange: (v) => { item.product_id = v; applyProduct(item); },
+                                            getValue: () => item.product_id,
+                                        })"
+                                        @click.outside="open = false"
+                                    >
+                                        @include('components.partials.searchable-select-inner')
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3">
                                     <input type="number" step="0.001" min="0.001" :name="'items['+index+'][quantity]'" x-model.number="item.quantity" class="w-full rounded-md border-gray-300 text-sm" required>

@@ -68,20 +68,33 @@
             @csrf
             <div>
                 <x-input-label for="product_id" value="Product" />
-                <select id="product_id" name="product_id" class="mt-1 block w-full rounded-md border-gray-300" required>
-                    <option value="">Select product</option>
-                    @foreach ($adjustmentProducts as $option)
-                        <option value="{{ $option->id }}">{{ $option->sku }} — {{ $option->name }}</option>
-                    @endforeach
-                </select>
+                <x-searchable-select
+                    name="product_id"
+                    :options="$adjustmentProducts->map(fn ($p) => ['value' => (string) $p->id, 'label' => $p->sku.' — '.$p->name, 'search' => $p->sku.' '.$p->name])->values()"
+                    :value="(string) old('product_id')"
+                    placeholder="Search product…"
+                    empty-label="Select product"
+                    :allow-empty="false"
+                    :required="true"
+                    class="mt-1"
+                />
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <x-input-label for="direction" value="Type" />
-                    <select id="direction" name="direction" class="mt-1 block w-full rounded-md border-gray-300" required>
-                        <option value="in">Increase</option>
-                        <option value="out">Decrease</option>
-                    </select>
+                    <x-searchable-select
+                        name="direction"
+                        :options="[
+                            ['value' => 'in', 'label' => 'Increase'],
+                            ['value' => 'out', 'label' => 'Decrease'],
+                        ]"
+                        :value="(string) old('direction', 'in')"
+                        empty-label="Increase"
+                        :allow-empty="false"
+                        :required="true"
+                        placeholder="Type"
+                        class="mt-1"
+                    />
                 </div>
                 <div>
                     <x-input-label for="quantity" value="Quantity" />

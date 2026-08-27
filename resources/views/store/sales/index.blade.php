@@ -2,24 +2,39 @@
     <x-slot name="header">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 class="text-xl font-semibold text-slate-800">Sales</h2>
-            <a href="{{ route('store.sales.create') }}" class="btn btn-primary">New Sale</a>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('store.sales.pos') }}" class="btn btn-success">POS</a>
+                <a href="{{ route('store.sales.create') }}" class="btn btn-primary">New Sale</a>
+            </div>
         </div>
     </x-slot>
 
     <form method="GET" class="mb-4 grid gap-3 sm:grid-cols-4">
         <input type="text" name="q" value="{{ request('q') }}" placeholder="Invoice or customer" class="rounded-lg border-slate-300 text-sm">
-        <select name="status" class="rounded-lg border-slate-300 text-sm">
-            <option value="">All statuses</option>
-            <option value="draft" @selected(request('status') === 'draft')>Draft</option>
-            <option value="completed" @selected(request('status') === 'completed')>Completed</option>
-            <option value="cancelled" @selected(request('status') === 'cancelled')>Cancelled</option>
-        </select>
-        <select name="payment_status" class="rounded-lg border-slate-300 text-sm">
-            <option value="">All payments</option>
-            <option value="unpaid" @selected(request('payment_status') === 'unpaid')>Unpaid</option>
-            <option value="partial" @selected(request('payment_status') === 'partial')>Partial</option>
-            <option value="paid" @selected(request('payment_status') === 'paid')>Paid</option>
-        </select>
+        <x-searchable-select
+            name="status"
+            :options="[
+                ['value' => 'draft', 'label' => 'Draft'],
+                ['value' => 'completed', 'label' => 'Completed'],
+                ['value' => 'cancelled', 'label' => 'Cancelled'],
+            ]"
+            :value="(string) request('status')"
+            empty-label="All statuses"
+            :allow-empty="true"
+            placeholder="Search status…"
+        />
+        <x-searchable-select
+            name="payment_status"
+            :options="[
+                ['value' => 'unpaid', 'label' => 'Unpaid'],
+                ['value' => 'partial', 'label' => 'Partial'],
+                ['value' => 'paid', 'label' => 'Paid'],
+            ]"
+            :value="(string) request('payment_status')"
+            empty-label="All payments"
+            :allow-empty="true"
+            placeholder="Search payment…"
+        />
         <button class="btn btn-dark">Filter</button>
     </form>
 

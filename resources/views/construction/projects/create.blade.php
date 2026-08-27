@@ -13,21 +13,28 @@
             </div>
             <div>
                 <x-input-label for="customer_id" value="Customer" />
-                <select id="customer_id" name="customer_id" class="mt-1 block w-full rounded-md border-gray-300" required>
-                    <option value="">Select customer</option>
-                    @foreach ($customers as $customer)
-                        <option value="{{ $customer->id }}" @selected(old('customer_id', $project->customer_id ?? '') == $customer->id)>{{ $customer->name }}</option>
-                    @endforeach
-                </select>
+                <x-searchable-select
+                    name="customer_id"
+                    :options="$customers->map(fn ($c) => ['value' => (string) $c->id, 'label' => $c->name, 'search' => $c->name])->values()"
+                    :value="(string) old('customer_id', $project->customer_id ?? '')"
+                    placeholder="Search customer…"
+                    empty-label="Select customer"
+                    :allow-empty="false"
+                    :required="true"
+                    class="mt-1"
+                />
             </div>
             <div>
                 <x-input-label for="site_manager_id" value="Site manager" />
-                <select id="site_manager_id" name="site_manager_id" class="mt-1 block w-full rounded-md border-gray-300">
-                    <option value="">Unassigned</option>
-                    @foreach ($siteManagers as $manager)
-                        <option value="{{ $manager->id }}" @selected(old('site_manager_id', $project->site_manager_id ?? '') == $manager->id)>{{ $manager->name }}</option>
-                    @endforeach
-                </select>
+                <x-searchable-select
+                    name="site_manager_id"
+                    :options="$siteManagers->map(fn ($m) => ['value' => (string) $m->id, 'label' => $m->name, 'search' => $m->name])->values()"
+                    :value="(string) old('site_manager_id', $project->site_manager_id ?? '')"
+                    placeholder="Search site manager…"
+                    empty-label="Unassigned"
+                    :allow-empty="true"
+                    class="mt-1"
+                />
             </div>
             <div class="sm:col-span-2">
                 <x-input-label for="location" value="Location" />
@@ -39,11 +46,16 @@
             </div>
             <div>
                 <x-input-label for="status" value="Status" />
-                <select id="status" name="status" class="mt-1 block w-full rounded-md border-gray-300" required>
-                    @foreach ($statuses as $status)
-                        <option value="{{ $status->value }}" @selected(old('status', isset($project) ? $project->status->value : 'planning') === $status->value)>{{ $status->label() }}</option>
-                    @endforeach
-                </select>
+                <x-searchable-select
+                    name="status"
+                    :options="collect($statuses)->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()])->values()"
+                    :value="(string) old('status', isset($project) ? $project->status->value : 'planning')"
+                    empty-label="Select status"
+                    :allow-empty="false"
+                    :required="true"
+                    placeholder="Search status…"
+                    class="mt-1"
+                />
             </div>
             <div>
                 <x-input-label for="start_date" value="Start date" />

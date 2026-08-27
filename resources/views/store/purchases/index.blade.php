@@ -8,12 +8,18 @@
 
     <form method="GET" class="mb-4 grid gap-3 sm:grid-cols-3">
         <input type="text" name="q" value="{{ request('q') }}" placeholder="Search reference or supplier" class="rounded-lg border-slate-300 text-sm">
-        <select name="status" class="rounded-lg border-slate-300 text-sm">
-            <option value="">All statuses</option>
-            <option value="draft" @selected(request('status') === 'draft')>Draft</option>
-            <option value="completed" @selected(request('status') === 'completed')>Completed</option>
-            <option value="cancelled" @selected(request('status') === 'cancelled')>Cancelled</option>
-        </select>
+        <x-searchable-select
+            name="status"
+            :options="[
+                ['value' => 'draft', 'label' => 'Draft'],
+                ['value' => 'completed', 'label' => 'Completed'],
+                ['value' => 'cancelled', 'label' => 'Cancelled'],
+            ]"
+            :value="(string) request('status')"
+            empty-label="All statuses"
+            :allow-empty="true"
+            placeholder="Search status…"
+        />
         <button class="btn btn-dark sm:min-w-32">Filter</button>
     </form>
 

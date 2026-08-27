@@ -4,18 +4,22 @@
     </x-slot>
 
     <form method="GET" class="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <select name="user_id" class="rounded-lg border-slate-300 text-sm">
-            <option value="">All users</option>
-            @foreach ($users as $user)
-                <option value="{{ $user->id }}" @selected((string) request('user_id') === (string) $user->id)>{{ $user->name }}</option>
-            @endforeach
-        </select>
-        <select name="module" class="rounded-lg border-slate-300 text-sm">
-            <option value="">All modules</option>
-            @foreach ($modules as $module)
-                <option value="{{ $module }}" @selected(request('module') === $module)>{{ $module }}</option>
-            @endforeach
-        </select>
+        <x-searchable-select
+            name="user_id"
+            :options="$users->map(fn ($u) => ['value' => (string) $u->id, 'label' => $u->name, 'search' => $u->name])->values()"
+            :value="(string) request('user_id')"
+            empty-label="All users"
+            :allow-empty="true"
+            placeholder="Search user…"
+        />
+        <x-searchable-select
+            name="module"
+            :options="collect($modules)->map(fn ($m) => ['value' => $m, 'label' => $m])->values()"
+            :value="(string) request('module')"
+            empty-label="All modules"
+            :allow-empty="true"
+            placeholder="Search module…"
+        />
         <input type="date" name="from" value="{{ request('from') }}" class="rounded-lg border-slate-300 text-sm">
         <input type="date" name="to" value="{{ request('to') }}" class="rounded-lg border-slate-300 text-sm">
         <button class="btn btn-dark">Filter</button>

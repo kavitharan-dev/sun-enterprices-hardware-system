@@ -10,12 +10,14 @@
 
     <form method="GET" class="mb-4 grid gap-3 sm:grid-cols-3">
         <input type="text" name="q" value="{{ request('q') }}" placeholder="Name, code or location" class="rounded-lg border-slate-300 text-sm">
-        <select name="status" class="rounded-lg border-slate-300 text-sm">
-            <option value="">All statuses</option>
-            @foreach (App\Enums\ProjectStatus::cases() as $status)
-                <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
-            @endforeach
-        </select>
+        <x-searchable-select
+            name="status"
+            :options="collect(App\Enums\ProjectStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()])->values()"
+            :value="(string) request('status')"
+            empty-label="All statuses"
+            :allow-empty="true"
+            placeholder="Search status…"
+        />
         <button class="btn btn-dark">Filter</button>
     </form>
 

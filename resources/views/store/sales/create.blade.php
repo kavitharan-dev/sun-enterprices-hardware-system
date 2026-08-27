@@ -8,6 +8,12 @@
         'unit' => $p->unit?->symbol,
     ])->values();
 
+    $customerOptions = $customers->map(fn ($c) => [
+        'value' => (string) $c->id,
+        'label' => $c->name.($c->phone ? ' · '.$c->phone : ''),
+        'search' => trim($c->name.' '.$c->phone),
+    ])->values();
+
     $existingItems = old('items', isset($sale)
         ? $sale->items->map(fn ($item) => [
             'product_id' => (string) $item->product_id,
@@ -21,7 +27,12 @@
 
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-semibold text-slate-800">{{ isset($sale) ? 'Edit Sale' : 'New Sale' }}</h2>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h2 class="text-xl font-semibold text-slate-800">{{ isset($sale) ? 'Edit Sale' : 'New Sale' }}</h2>
+            @unless (isset($sale))
+                <a href="{{ route('store.sales.pos') }}" class="btn btn-success btn-sm">Open POS (scan + search)</a>
+            @endunless
+        </div>
     </x-slot>
 
     <form
@@ -36,12 +47,21 @@
         <div class="grid gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:grid-cols-3">
             <div>
                 <x-input-label for="customer_id" value="Registered customer" />
-                <select id="customer_id" name="customer_id" x-model="customerId" class="mt-1 block w-full rounded-md border-gray-300">
-                    <option value="">Walk-in (type name)</option>
-                    @foreach ($customers as $customer)
-                        <option value="{{ $customer->id }}" @selected(old('customer_id', $sale->customer_id ?? '') == $customer->id)>{{ $customer->name }}</option>
-                    @endforeach
-                </select>
+                <div class="relative mt-1"
+                    x-data="searchableSelect({
+                        options: @json($customerOptions),
+                        value: @json((string) old('customer_id', $sale->customer_id ?? '')),
+                        name: 'customer_id',
+                        allowEmpty: true,
+                        emptyLabel: 'Walk-in (type name)',
+                        placeholder: 'Search customer…',
+                        onChange: (v) => { customerId = v; },
+                        getValue: () => customerId,
+                    })"
+                    @click.outside="open = false"
+                >
+                    @include('components.partials.searchable-select-inner')
+                </div>
             </div>
             <div x-show="!customerId" x-cloak>
                 <x-input-label for="walk_in_name" value="Walk-in customer name" />
@@ -79,12 +99,26 @@
                         <template x-for="(item, index) in items" :key="index">
                             <tr class="border-t">
                                 <td class="px-4 py-3">
-                                    <select :name="'items['+index+'][product_id]'" x-model="item.product_id" @change="applyProduct(item)" class="w-full rounded-md border-gray-300 text-sm" required>
-                                        <option value="">Select product</option>
-                                        <template x-for="product in products" :key="product.id">
-                                            <option :value="product.id" x-text="product.sku + ' — ' + product.name + ' (' + product.stock + ' ' + (product.unit || '') + ')'"></option>
-                                        </template>
-                                    </select>
+                                    <div class="relative"
+                                        x-data="searchableSelect({
+                                            options: products.map(p => ({
+                                                value: String(p.id),
+                                                label: p.sku + ' — ' + p.name + ' (' + p.stock + ' ' + (p.unit || '') + ')',
+                                                search: p.sku + ' ' + p.name,
+                                            })),
+                                            value: item.product_id,
+                                            name: () => 'items[' + index + '][product_id]',
+                                            required: true,
+                                            allowEmpty: true,
+                                            emptyLabel: 'Select product',
+                                            placeholder: 'Search product…',
+                                            onChange: (v) => { item.product_id = v; applyProduct(item); },
+                                            getValue: () => item.product_id,
+                                        })"
+                                        @click.outside="open = false"
+                                    >
+                                        @include('components.partials.searchable-select-inner')
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3">
                                     <input type="number" step="0.001" min="0.001" :name="'items['+index+'][quantity]'" x-model.number="item.quantity" class="w-full rounded-md border-gray-300 text-sm" required>
@@ -124,12 +158,26 @@
             <div class="grid gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:grid-cols-2">
                 <div>
                     <x-input-label for="payment_method" value="Payment method" />
-                    <select id="payment_method" name="payment_method" x-model="paymentMethod" class="mt-1 block w-full rounded-md border-gray-300">
-                        <option value="cash">Cash</option>
-                        <option value="card">Card</option>
-                        <option value="bank_transfer">Bank Transfer</option>
-                        <option value="credit">Credit (pay later)</option>
-                    </select>
+                    <div class="relative mt-1"
+                        x-data="searchableSelect({
+                            options: [
+                                { value: 'cash', label: 'Cash' },
+                                { value: 'card', label: 'Card' },
+                                { value: 'bank_transfer', label: 'Bank Transfer' },
+                                { value: 'credit', label: 'Credit (pay later)' },
+                            ],
+                            value: @json((string) old('payment_method', 'cash')),
+                            name: 'payment_method',
+                            allowEmpty: false,
+                            emptyLabel: 'Cash',
+                            placeholder: 'Payment method',
+                            onChange: (v) => { paymentMethod = v; },
+                            getValue: () => paymentMethod,
+                        })"
+                        @click.outside="open = false"
+                    >
+                        @include('components.partials.searchable-select-inner')
+                    </div>
                 </div>
                 <div x-show="paymentMethod !== 'credit'">
                     <x-input-label for="payment_amount" value="Amount customer paid (Rs.)" />
@@ -151,7 +199,7 @@
             @unless (isset($sale))
                 @if (auth()->user()->canConfirmTill())
                     <button type="submit" name="complete" value="1" class="btn btn-success">
-                        Complete, print bill &amp; next sale
+                        Complete, thermal print &amp; next sale
                     </button>
                 @endif
             @endunless

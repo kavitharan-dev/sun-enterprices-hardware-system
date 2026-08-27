@@ -117,11 +117,16 @@
                                             <form method="POST" action="{{ route('cashier.requests.confirm', $item) }}" class="flex flex-wrap items-end gap-2">
                                                 @csrf
                                                 <input type="date" name="payment_date" value="{{ $item->payment_date?->toDateString() ?? now()->toDateString() }}" class="rounded-md border-gray-300 text-xs" required>
-                                                <select name="method" class="rounded-md border-gray-300 text-xs" required>
-                                                    @foreach ($methods as $method)
-                                                        <option value="{{ $method->value }}" @selected(($item->method?->value ?? 'cash') === $method->value)>{{ $method->label() }}</option>
-                                                    @endforeach
-                                                </select>
+                                                <x-searchable-select
+                                                    name="method"
+                                                    :options="collect($methods)->map(fn ($m) => ['value' => $m->value, 'label' => $m->label()])->values()"
+                                                    :value="(string) ($item->method?->value ?? 'cash')"
+                                                    empty-label="Cash"
+                                                    :allow-empty="false"
+                                                    :required="true"
+                                                    placeholder="Method"
+                                                    class="min-w-28 text-xs"
+                                                />
                                                 <input type="text" name="reference" value="{{ $item->reference }}" placeholder="Receipt no." class="w-28 rounded-md border-gray-300 text-xs">
                                                 <button class="btn btn-success btn-sm">Confirm</button>
                                             </form>
@@ -152,56 +157,78 @@
             </div>
             <div>
                 <x-input-label for="project_id" value="Project" />
-                <select id="project_id" name="project_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                    <option value="">All projects</option>
-                    @foreach ($projects as $project)
-                        <option value="{{ $project->id }}" @selected((string) $filters['project_id'] === (string) $project->id)>{{ $project->name }}</option>
-                    @endforeach
-                </select>
+                <x-searchable-select
+                    name="project_id"
+                    :options="$projects->map(fn ($p) => ['value' => (string) $p->id, 'label' => $p->name, 'search' => $p->name])->values()"
+                    :value="(string) ($filters['project_id'] ?? '')"
+                    empty-label="All projects"
+                    :allow-empty="true"
+                    placeholder="Search project…"
+                    class="mt-1"
+                />
             </div>
             <div>
                 <x-input-label for="worker_id" value="Worker" />
-                <select id="worker_id" name="worker_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                    <option value="">All workers</option>
-                    @foreach ($workers as $worker)
-                        <option value="{{ $worker->id }}" @selected((string) $filters['worker_id'] === (string) $worker->id)>{{ $worker->name }}</option>
-                    @endforeach
-                </select>
+                <x-searchable-select
+                    name="worker_id"
+                    :options="$workers->map(fn ($w) => ['value' => (string) $w->id, 'label' => $w->name, 'search' => $w->name])->values()"
+                    :value="(string) ($filters['worker_id'] ?? '')"
+                    empty-label="All workers"
+                    :allow-empty="true"
+                    placeholder="Search worker…"
+                    class="mt-1"
+                />
             </div>
             <div>
                 <x-input-label for="type" value="Transaction type" />
-                <select id="type" name="type" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                    <option value="">All types</option>
-                    @foreach ($types as $type)
-                        <option value="{{ $type->value }}" @selected($filters['type'] === $type->value)>{{ $type->label() }}</option>
-                    @endforeach
-                </select>
+                <x-searchable-select
+                    name="type"
+                    :options="collect($types)->map(fn ($t) => ['value' => $t->value, 'label' => $t->label()])->values()"
+                    :value="(string) ($filters['type'] ?? '')"
+                    empty-label="All types"
+                    :allow-empty="true"
+                    placeholder="Search type…"
+                    class="mt-1"
+                />
             </div>
             <div>
                 <x-input-label for="category" value="Category" />
-                <select id="category" name="category" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                    <option value="">All categories</option>
-                    @foreach ($categories as $category)
-                        <option value="{{ $category->value }}" @selected($filters['category'] === $category->value)>{{ $category->label() }}</option>
-                    @endforeach
-                </select>
+                <x-searchable-select
+                    name="category"
+                    :options="collect($categories)->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()])->values()"
+                    :value="(string) ($filters['category'] ?? '')"
+                    empty-label="All categories"
+                    :allow-empty="true"
+                    placeholder="Search category…"
+                    class="mt-1"
+                />
             </div>
             <div>
                 <x-input-label for="direction" value="Income / Expense" />
-                <select id="direction" name="direction" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                    <option value="">Both</option>
-                    <option value="income" @selected($filters['direction'] === 'income')>Income</option>
-                    <option value="expense" @selected($filters['direction'] === 'expense')>Expense</option>
-                </select>
+                <x-searchable-select
+                    name="direction"
+                    :options="[
+                        ['value' => 'income', 'label' => 'Income'],
+                        ['value' => 'expense', 'label' => 'Expense'],
+                    ]"
+                    :value="(string) ($filters['direction'] ?? '')"
+                    empty-label="Both"
+                    :allow-empty="true"
+                    placeholder="Direction"
+                    class="mt-1"
+                />
             </div>
             <div>
                 <x-input-label for="method" value="Payment method" />
-                <select id="method" name="method" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                    <option value="">All methods</option>
-                    @foreach ($methods as $method)
-                        <option value="{{ $method->value }}" @selected($filters['method'] === $method->value)>{{ $method->label() }}</option>
-                    @endforeach
-                </select>
+                <x-searchable-select
+                    name="method"
+                    :options="collect($methods)->map(fn ($m) => ['value' => $m->value, 'label' => $m->label()])->values()"
+                    :value="(string) ($filters['method'] ?? '')"
+                    empty-label="All methods"
+                    :allow-empty="true"
+                    placeholder="Search method…"
+                    class="mt-1"
+                />
             </div>
             <div class="flex items-end gap-2 lg:col-span-4">
                 <x-primary-button>Filter</x-primary-button>
@@ -306,69 +333,107 @@
                     </div>
                     <div>
                         <x-input-label for="manual_type" value="What is this money?" />
-                        <select id="manual_type" name="type" x-model="type" class="mt-1 block w-full rounded-md border-gray-300 text-sm" required>
-                            @foreach ($types as $type)
-                                <option value="{{ $type->value }}">{{ $type->label() }}</option>
-                            @endforeach
-                        </select>
+                        <div class="relative mt-1"
+                            x-data="searchableSelect({
+                                options: @json(collect($types)->map(fn ($t) => ['value' => $t->value, 'label' => $t->label()])->values()),
+                                value: @json((string) old('type', 'owner_payment')),
+                                name: 'type',
+                                required: true,
+                                allowEmpty: false,
+                                emptyLabel: 'Select type',
+                                placeholder: 'Search type…',
+                                onChange: (v) => { type = v; },
+                                getValue: () => type,
+                            })"
+                            @click.outside="open = false"
+                        >
+                            @include('components.partials.searchable-select-inner')
+                        </div>
                     </div>
                     <div x-show="type === 'sale'" x-cloak class="sm:col-span-2">
                         <x-input-label for="sale_id" value="Sale" />
-                        <select id="sale_id" name="sale_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                            <option value="">Select a draft or unpaid sale</option>
-                            @foreach ($openSales as $sale)
-                                <option value="{{ $sale->id }}" @selected((string) old('sale_id') === (string) $sale->id)>
-                                    {{ $sale->invoice_no ?: 'Draft' }} — {{ $sale->customerName() }} — Rs. {{ number_format((float) ($sale->balance > 0 ? $sale->balance : $sale->total), 2) }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-searchable-select
+                            name="sale_id"
+                            :options="$openSales->map(fn ($s) => [
+                                'value' => (string) $s->id,
+                                'label' => ($s->invoice_no ?: 'Draft').' — '.$s->customerName().' — Rs. '.number_format((float) ($s->balance > 0 ? $s->balance : $s->total), 2),
+                                'search' => ($s->invoice_no ?: 'Draft').' '.$s->customerName(),
+                            ])->values()"
+                            :value="(string) old('sale_id')"
+                            empty-label="Select a draft or unpaid sale"
+                            :allow-empty="true"
+                            placeholder="Search sale…"
+                            class="mt-1"
+                        />
                     </div>
                     <div x-show="type === 'purchase'" x-cloak class="sm:col-span-2">
                         <x-input-label for="purchase_id" value="Purchase" />
-                        <select id="purchase_id" name="purchase_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                            <option value="">Select a draft purchase to pay</option>
-                            @foreach ($draftPurchases as $purchase)
-                                <option value="{{ $purchase->id }}" @selected((string) old('purchase_id') === (string) $purchase->id)>
-                                    {{ $purchase->reference_no }} — {{ $purchase->supplier?->name }} — Rs. {{ number_format((float) $purchase->total, 2) }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-searchable-select
+                            name="purchase_id"
+                            :options="$draftPurchases->map(fn ($p) => [
+                                'value' => (string) $p->id,
+                                'label' => $p->reference_no.' — '.($p->supplier?->name ?? '').' — Rs. '.number_format((float) $p->total, 2),
+                                'search' => $p->reference_no.' '.($p->supplier?->name ?? ''),
+                            ])->values()"
+                            :value="(string) old('purchase_id')"
+                            empty-label="Select a draft purchase to pay"
+                            :allow-empty="true"
+                            placeholder="Search purchase…"
+                            class="mt-1"
+                        />
                     </div>
                     <div x-show="['owner_payment','project_expense','worker_advance','worker_settlement'].includes(type)" x-cloak>
                         <x-input-label for="manual_project" value="Project" />
-                        <select id="manual_project" name="project_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                            <option value="">{{ in_array(old('type'), ['owner_payment', 'project_expense'], true) ? 'Select project' : 'Optional' }}</option>
-                            @foreach ($projects as $project)
-                                <option value="{{ $project->id }}" @selected((string) old('project_id') === (string) $project->id)>{{ $project->name }}</option>
-                            @endforeach
-                        </select>
+                        <x-searchable-select
+                            name="project_id"
+                            :options="$projects->map(fn ($p) => ['value' => (string) $p->id, 'label' => $p->name, 'search' => $p->name])->values()"
+                            :value="(string) old('project_id')"
+                            :empty-label="in_array(old('type'), ['owner_payment', 'project_expense'], true) ? 'Select project' : 'Optional'"
+                            :allow-empty="true"
+                            placeholder="Search project…"
+                            class="mt-1"
+                        />
                     </div>
                     <div x-show="['worker_advance','worker_settlement','other_income','other_expense'].includes(type)" x-cloak>
                         <x-input-label for="manual_worker" value="Worker" />
-                        <select id="manual_worker" name="worker_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                            <option value="">{{ str_starts_with(old('type', ''), 'worker') ? 'Select worker' : 'Optional' }}</option>
-                            @foreach ($workers as $worker)
-                                <option value="{{ $worker->id }}" @selected((string) old('worker_id') === (string) $worker->id)>{{ $worker->name }}</option>
-                            @endforeach
-                        </select>
+                        <x-searchable-select
+                            name="worker_id"
+                            :options="$workers->map(fn ($w) => ['value' => (string) $w->id, 'label' => $w->name, 'search' => $w->name])->values()"
+                            :value="(string) old('worker_id')"
+                            :empty-label="str_starts_with(old('type', ''), 'worker') ? 'Select worker' : 'Optional'"
+                            :allow-empty="true"
+                            placeholder="Search worker…"
+                            class="mt-1"
+                        />
                     </div>
                     <div x-show="type === 'project_expense'" x-cloak>
                         <x-input-label for="expense_category" value="Expense category" />
-                        <select id="expense_category" name="expense_category" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                            <option value="">Category</option>
-                            @foreach ($expenseCategories as $category)
-                                <option value="{{ $category->value }}" @selected(old('expense_category') === $category->value)>{{ $category->label() }}</option>
-                            @endforeach
-                        </select>
+                        <x-searchable-select
+                            name="expense_category"
+                            :options="collect($expenseCategories)->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()])->values()"
+                            :value="(string) old('expense_category')"
+                            empty-label="Category"
+                            :allow-empty="true"
+                            placeholder="Search category…"
+                            class="mt-1"
+                        />
                     </div>
                     <div x-show="type === 'other_income' || type === 'other_expense'" x-cloak>
                         <x-input-label for="manual_category" value="Category" />
-                        <select id="manual_category" name="category" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                            <option value="other_income">Other income</option>
-                            <option value="other">Other</option>
-                            <option value="transport">Transport</option>
-                            <option value="labour">Labour</option>
-                        </select>
+                        <x-searchable-select
+                            name="category"
+                            :options="[
+                                ['value' => 'other_income', 'label' => 'Other income'],
+                                ['value' => 'other', 'label' => 'Other'],
+                                ['value' => 'transport', 'label' => 'Transport'],
+                                ['value' => 'labour', 'label' => 'Labour'],
+                            ]"
+                            :value="(string) old('category', 'other_income')"
+                            empty-label="Other income"
+                            :allow-empty="false"
+                            placeholder="Category"
+                            class="mt-1"
+                        />
                     </div>
                     <div x-show="type !== 'purchase'">
                         <x-input-label for="manual_amount" value="Amount (Rs.)" />
@@ -376,11 +441,15 @@
                     </div>
                     <div>
                         <x-input-label for="manual_method" value="Method" />
-                        <select id="manual_method" name="method" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                            @foreach ($methods as $method)
-                                <option value="{{ $method->value }}">{{ $method->label() }}</option>
-                            @endforeach
-                        </select>
+                        <x-searchable-select
+                            name="method"
+                            :options="collect($methods)->map(fn ($m) => ['value' => $m->value, 'label' => $m->label()])->values()"
+                            :value="(string) old('method', collect($methods)->first()?->value ?? 'cash')"
+                            empty-label="Select method"
+                            :allow-empty="false"
+                            placeholder="Search method…"
+                            class="mt-1"
+                        />
                     </div>
                     <div>
                         <x-input-label for="manual_reference" value="Receipt / reference" />

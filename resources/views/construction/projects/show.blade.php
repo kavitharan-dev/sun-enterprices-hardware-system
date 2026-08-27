@@ -96,12 +96,15 @@
                 @can('assignWorker', $project)
                     <form method="POST" action="{{ route('construction.projects.workers.store', $project) }}" class="grid gap-3 border-t p-4 sm:grid-cols-2">
                         @csrf
-                        <select name="worker_id" class="rounded-md border-gray-300 text-sm" required>
-                            <option value="">Select worker</option>
-                            @foreach ($availableWorkers as $worker)
-                                <option value="{{ $worker->id }}">{{ $worker->name }} ({{ $worker->job_role }})</option>
-                            @endforeach
-                        </select>
+                        <x-searchable-select
+                            name="worker_id"
+                            :options="$availableWorkers->map(fn ($w) => ['value' => (string) $w->id, 'label' => $w->name.' ('.$w->job_role.')', 'search' => $w->name.' '.$w->job_role])->values()"
+                            :value="(string) old('worker_id')"
+                            placeholder="Search worker…"
+                            empty-label="Select worker"
+                            :allow-empty="false"
+                            :required="true"
+                        />
                         <input type="text" name="role_on_site" placeholder="Role on site" class="rounded-md border-gray-300 text-sm">
                         <input type="date" name="assigned_from" value="{{ now()->toDateString() }}" class="rounded-md border-gray-300 text-sm" required>
                         <input type="date" name="assigned_to" class="rounded-md border-gray-300 text-sm">

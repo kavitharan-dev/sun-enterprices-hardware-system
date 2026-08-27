@@ -38,11 +38,16 @@
             </div>
             <div>
                 <x-input-label for="status" value="Status" />
-                <select id="status" name="status" class="mt-1 block w-full rounded-md border-gray-300" required>
-                    @foreach ($statuses as $status)
-                        <option value="{{ $status->value }}" @selected(old('status', isset($worker) ? $worker->status->value : 'active') === $status->value)>{{ $status->label() }}</option>
-                    @endforeach
-                </select>
+                <x-searchable-select
+                    name="status"
+                    :options="collect($statuses)->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()])->values()"
+                    :value="(string) old('status', isset($worker) ? $worker->status->value : 'active')"
+                    empty-label="Select status"
+                    :allow-empty="false"
+                    :required="true"
+                    placeholder="Search status…"
+                    class="mt-1"
+                />
             </div>
         </div>
         <div class="flex gap-3">

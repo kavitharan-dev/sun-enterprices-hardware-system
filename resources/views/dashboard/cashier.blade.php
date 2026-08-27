@@ -19,8 +19,8 @@
     </div>
     <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-wrap gap-3">
+        <a href="{{ route('store.sales.pos') }}" class="btn btn-success">Open POS</a>
         <a href="{{ route('cashier.daily-accounts.index') }}" class="btn btn-primary">Daily accounts</a>
-        <a href="{{ route('store.sales.create') }}" class="btn btn-success">New sale</a>
         <a href="{{ route('store.customers.index') }}" class="btn btn-secondary">Customers</a>
         </div>
     </div>

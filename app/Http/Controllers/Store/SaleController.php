@@ -56,6 +56,13 @@ class SaleController extends Controller
         return view('store.sales.create', $this->formData());
     }
 
+    public function pos(): View
+    {
+        $this->authorize('create', Sale::class);
+
+        return view('store.sales.pos', $this->formData());
+    }
+
     public function store(SaleRequest $request): RedirectResponse
     {
         $sale = $this->saleService->create(
@@ -216,6 +223,23 @@ class SaleController extends Controller
             'sale' => $sale,
             'company' => $this->invoices->company(),
             'goToNewSale' => $request->boolean('next'),
+            'nextUrl' => route('store.sales.pos'),
+        ]);
+    }
+
+    public function thermal(Request $request, Sale $sale): View
+    {
+        $this->authorize('view', $sale);
+
+        abort_unless($sale->isCompleted(), 404);
+
+        $sale->load(['items.product.unit', 'customer', 'payments']);
+
+        return view('store.sales.thermal', [
+            'sale' => $sale,
+            'company' => $this->invoices->company(),
+            'goToNewSale' => $request->boolean('next'),
+            'nextUrl' => route('store.sales.pos'),
         ]);
     }
 
@@ -258,8 +282,8 @@ class SaleController extends Controller
         $invoiceNo = $sale->fresh()->invoice_no;
 
         return redirect()
-            ->route('store.sales.print', ['sale' => $sale, 'next' => 1])
-            ->with('success', "Sale {$invoiceNo} completed. Print the bill, then start the next sale.");
+            ->route('store.sales.thermal', ['sale' => $sale, 'next' => 1])
+            ->with('success', "Sale {$invoiceNo} completed. Print the thermal receipt, then start the next sale.");
     }
 
     private function formData(): array

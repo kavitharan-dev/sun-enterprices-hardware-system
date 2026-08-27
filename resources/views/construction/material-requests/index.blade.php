@@ -8,12 +8,14 @@
 
     <form method="GET" class="mb-4 grid gap-3 sm:grid-cols-3">
         <input type="text" name="q" value="{{ request('q') }}" placeholder="Request no, project or product" class="rounded-lg border-slate-300 text-sm">
-        <select name="status" class="rounded-lg border-slate-300 text-sm">
-            <option value="">All statuses</option>
-            @foreach (App\Enums\MaterialRequestStatus::cases() as $status)
-                <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
-            @endforeach
-        </select>
+        <x-searchable-select
+            name="status"
+            :options="collect(App\Enums\MaterialRequestStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()])->values()"
+            :value="(string) request('status')"
+            empty-label="All statuses"
+            :allow-empty="true"
+            placeholder="Search status…"
+        />
         <button class="btn btn-dark">Filter</button>
     </form>
 

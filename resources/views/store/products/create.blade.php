@@ -16,35 +16,46 @@
                     <x-text-input id="name" name="name" class="mt-1 block w-full" :value="old('name', $product->name ?? '')" required />
                 </div>
                 <div>
-                    <x-input-label for="sku" value="SKU (leave blank to auto-generate)" />
-                    <x-text-input id="sku" name="sku" class="mt-1 block w-full" :value="old('sku', $product->sku ?? '')" />
+                    <x-input-label for="sku" value="SKU / barcode" />
+                    <x-text-input id="sku" name="sku" class="mt-1 block w-full" :value="old('sku', $product->sku ?? '')" placeholder="Leave blank to auto-generate" />
                 </div>
                 <div>
                     <x-input-label for="category_id" value="Category" />
-                    <select id="category_id" name="category_id" class="mt-1 block w-full rounded-md border-gray-300" required>
-                        <option value="">Select category</option>
-                        @foreach ($categories as $category)
-                            <option value="{{ $category->id }}" @selected(old('category_id', $product->category_id ?? '') == $category->id)>{{ $category->name }}</option>
-                        @endforeach
-                    </select>
+                    <x-searchable-select
+                        name="category_id"
+                        :options="$categories->map(fn ($c) => ['value' => (string) $c->id, 'label' => $c->name, 'search' => $c->name])->values()"
+                        :value="(string) old('category_id', $product->category_id ?? '')"
+                        placeholder="Search category…"
+                        empty-label="Select category"
+                        :allow-empty="false"
+                        :required="true"
+                        class="mt-1"
+                    />
                 </div>
                 <div>
                     <x-input-label for="brand_id" value="Brand" />
-                    <select id="brand_id" name="brand_id" class="mt-1 block w-full rounded-md border-gray-300">
-                        <option value="">No brand</option>
-                        @foreach ($brands as $brand)
-                            <option value="{{ $brand->id }}" @selected(old('brand_id', $product->brand_id ?? '') == $brand->id)>{{ $brand->name }}</option>
-                        @endforeach
-                    </select>
+                    <x-searchable-select
+                        name="brand_id"
+                        :options="$brands->map(fn ($b) => ['value' => (string) $b->id, 'label' => $b->name, 'search' => $b->name])->values()"
+                        :value="(string) old('brand_id', $product->brand_id ?? '')"
+                        placeholder="Search brand…"
+                        empty-label="No brand"
+                        :allow-empty="true"
+                        class="mt-1"
+                    />
                 </div>
                 <div>
                     <x-input-label for="unit_id" value="Unit" />
-                    <select id="unit_id" name="unit_id" class="mt-1 block w-full rounded-md border-gray-300" required>
-                        <option value="">Select unit</option>
-                        @foreach ($units as $unit)
-                            <option value="{{ $unit->id }}" @selected(old('unit_id', $product->unit_id ?? '') == $unit->id)>{{ $unit->name }} ({{ $unit->symbol }})</option>
-                        @endforeach
-                    </select>
+                    <x-searchable-select
+                        name="unit_id"
+                        :options="$units->map(fn ($u) => ['value' => (string) $u->id, 'label' => $u->name.' ('.$u->symbol.')', 'search' => $u->name.' '.$u->symbol])->values()"
+                        :value="(string) old('unit_id', $product->unit_id ?? '')"
+                        placeholder="Search unit…"
+                        empty-label="Select unit"
+                        :allow-empty="false"
+                        :required="true"
+                        class="mt-1"
+                    />
                 </div>
                 <div>
                     <x-input-label for="min_stock_level" value="Minimum stock level" />

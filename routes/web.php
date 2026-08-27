@@ -99,10 +99,12 @@ Route::middleware(['auth', 'role:admin|store_manager'])->prefix('store')->name('
 Route::middleware(['auth', 'role:admin|store_manager|cashier'])->prefix('store')->name('store.')->group(function () {
     Route::resource('customers', CustomerController::class);
 
+    Route::get('sales/pos', [SaleController::class, 'pos'])->name('sales.pos');
     Route::get('sales/{sale}/bill', [SaleController::class, 'bill'])->name('sales.bill');
     Route::get('sales/{sale}/invoice', [SaleController::class, 'invoice'])->name('sales.invoice');
     Route::get('sales/{sale}/invoice/download', [SaleController::class, 'invoiceDownload'])->name('sales.invoice.download');
     Route::get('sales/{sale}/print', [SaleController::class, 'print'])->name('sales.print');
+    Route::get('sales/{sale}/thermal', [SaleController::class, 'thermal'])->name('sales.thermal');
     Route::post('sales/{sale}/complete', [SaleController::class, 'complete'])->name('sales.complete');
     Route::post('sales/{sale}/pay', [SaleController::class, 'pay'])->name('sales.pay');
     Route::resource('sales', SaleController::class);

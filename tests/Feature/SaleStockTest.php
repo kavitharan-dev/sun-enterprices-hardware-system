@@ -195,6 +195,18 @@ class SaleStockTest extends TestCase
             ->assertSee('SUN ENTERPRICES')
             ->assertSee('Nimal Perera')
             ->assertSee('New sale');
+
+        $this->actingAs($user)
+            ->get(route('store.sales.thermal', $sale))
+            ->assertOk()
+            ->assertSee('SUN ENTERPRICES')
+            ->assertSee('Nimal Perera')
+            ->assertSee('Receipt');
+
+        $this->actingAs($user)
+            ->get(route('store.sales.pos'))
+            ->assertOk()
+            ->assertSee('Barcode / SKU scan');
     }
 
     public function test_cash_sale_cannot_complete_without_paid_amount(): void
