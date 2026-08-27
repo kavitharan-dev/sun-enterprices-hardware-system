@@ -206,7 +206,8 @@ class SaleStockTest extends TestCase
         $this->actingAs($user)
             ->get(route('store.sales.pos'))
             ->assertOk()
-            ->assertSee('Barcode / SKU scan');
+            ->assertSee('Barcode / SKU')
+            ->assertSee('Point of Sale');
     }
 
     public function test_cash_sale_cannot_complete_without_paid_amount(): void

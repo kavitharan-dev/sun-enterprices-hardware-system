@@ -1,6 +1,6 @@
 @php
     $productOptions = $products->map(fn ($p) => [
-        'id' => $p->id,
+        'id' => (string) $p->id,
         'name' => $p->name,
         'sku' => $p->sku,
         'selling_price' => (float) $p->selling_price,
@@ -9,9 +9,9 @@
     ])->values();
 
     $customerOptions = $customers->map(fn ($c) => [
-        'value' => (string) $c->id,
-        'label' => $c->name.($c->phone ? ' · '.$c->phone : ''),
-        'search' => trim($c->name.' '.$c->phone),
+        'id' => (string) $c->id,
+        'name' => $c->name,
+        'phone' => $c->phone,
     ])->values();
 @endphp
 
@@ -19,222 +19,273 @@
     <x-slot name="header">
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h2 class="text-xl font-semibold text-slate-800">POS</h2>
-                <p class="text-sm text-slate-500">Scan barcode / SKU or search to add items. Completes into Daily Accounts.</p>
+                <h2 class="brand-wordmark text-2xl text-walnut-900">Point of Sale</h2>
+                <p class="mt-0.5 text-sm text-walnut-700/70">Scan or search · pay · thermal print · Daily Accounts</p>
             </div>
-            <a href="{{ route('store.sales.create') }}" class="btn btn-secondary btn-sm">Classic sale form</a>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('cashier.daily-accounts.index') }}" class="btn btn-secondary btn-sm">Daily Accounts</a>
+                <a href="{{ route('store.sales.create') }}" class="btn btn-secondary btn-sm">Classic form</a>
+            </div>
         </div>
     </x-slot>
 
     <form
         method="POST"
         action="{{ route('store.sales.store') }}"
-        class="space-y-4"
+        class="mx-auto max-w-7xl"
         x-data="posForm()"
-        @submit="prepareSubmit"
+        x-on:submit="prepareSubmit"
     >
         @csrf
 
-        <div class="grid gap-4 lg:grid-cols-3">
-            <div class="space-y-4 lg:col-span-2">
-                <div class="rounded-xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm">
-                    <x-input-label for="barcode_scan" value="Barcode / SKU scan" />
-                    <div class="mt-1 flex gap-2">
+        <div class="grid gap-5 xl:grid-cols-12">
+            {{-- Left: scan + cart --}}
+            <div class="space-y-4 xl:col-span-8">
+                <div class="rounded-2xl border border-amber-300/80 bg-gradient-to-br from-amber-50 via-white to-sun-50 p-4 shadow-sm sm:p-5">
+                    <label for="barcode_scan" class="text-xs font-semibold uppercase tracking-wider text-amber-900/70">Barcode / SKU</label>
+                    <div class="mt-2 flex flex-col gap-2 sm:flex-row">
                         <input
                             id="barcode_scan"
                             type="text"
                             x-model="scan"
                             x-ref="scan"
-                            @keydown.enter.prevent="applyScan()"
-                            class="block w-full rounded-md border-amber-300 text-lg font-mono shadow-sm focus:border-amber-500 focus:ring-amber-500"
-                            placeholder="Scan here, then Enter"
+                            x-on:keydown.enter.prevent="applyScan()"
+                            class="block w-full rounded-xl border-2 border-amber-300 bg-white px-4 py-3.5 font-mono text-lg shadow-inner focus:border-amber-500 focus:ring-amber-500"
+                            placeholder="Scan barcode here…"
                             autocomplete="off"
                             autofocus
                         >
-                        <button type="button" @click="applyScan()" class="btn btn-primary shrink-0">Add</button>
+                        <button type="button" x-on:click="applyScan()" class="btn btn-primary shrink-0 rounded-xl px-6 py-3.5 text-base">Add</button>
                     </div>
-                    <p class="mt-1 text-xs text-amber-900/70">Scanner types the SKU and presses Enter. Product SKU must match the barcode.</p>
-                    <p x-show="scanMessage" x-cloak class="mt-2 text-sm font-medium" :class="scanOk ? 'text-emerald-700' : 'text-rose-700'" x-text="scanMessage"></p>
+                    <p
+                        x-show="scanMessage"
+                        x-cloak
+                        class="mt-2 rounded-lg px-3 py-2 text-sm font-medium"
+                        :class="scanOk ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'"
+                        x-text="scanMessage"
+                    ></p>
                 </div>
 
-                <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <x-input-label value="Search & add product" />
-                    <div
-                        class="relative mt-1"
-                        x-data="searchableSelect({
-                            options: products.map(p => ({
-                                value: String(p.id),
-                                label: p.sku + ' — ' + p.name + ' (stock ' + p.stock + ' ' + (p.unit || '') + ')',
-                                search: p.sku + ' ' + p.name,
-                            })),
-                            value: '',
-                            name: '',
-                            allowEmpty: false,
-                            emptyLabel: 'Search product…',
-                            placeholder: 'Type name or SKU…',
-                            onChange: (val) => { addProductById(val); },
-                        })"
-                        @click.outside="open = false"
+                <div class="relative rounded-2xl border border-walnut-200/80 bg-white p-4 shadow-sm sm:p-5">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Search product</label>
+                    <input
+                        type="text"
+                        x-model="productQuery"
+                        x-on:focus="productOpen = true"
+                        x-on:keydown.arrow-down.prevent="highlightProduct(1)"
+                        x-on:keydown.arrow-up.prevent="highlightProduct(-1)"
+                        x-on:keydown.enter.prevent="pickHighlightedProduct()"
+                        x-on:keydown.escape="productOpen = false"
+                        class="mt-2 block w-full rounded-xl border-slate-300 px-4 py-3 text-base focus:border-amber-500 focus:ring-amber-500"
+                        placeholder="Type product name or SKU…"
+                        autocomplete="off"
                     >
-                        <button
-                            type="button"
-                            @click="toggle()"
-                            @keydown="onKeydown($event)"
-                            class="flex w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-left text-sm shadow-sm hover:border-amber-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                        >
-                            <span class="truncate text-slate-400" x-text="placeholder"></span>
-                            <svg class="h-4 w-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
-                        </button>
-                        <div x-show="open" x-cloak class="absolute z-50 mt-1 w-full overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg">
-                            <div class="border-b p-2">
-                                <input x-ref="search" type="text" x-model="query" @keydown="onKeydown($event)" class="block w-full rounded-md border-gray-300 text-sm" placeholder="Type name or SKU…" autocomplete="off">
-                            </div>
-                            <ul class="max-h-64 overflow-y-auto py-1 text-sm">
-                                <template x-for="(opt, i) in filtered" :key="opt.value">
-                                    <li>
-                                        <button type="button" class="flex w-full px-3 py-2 text-left hover:bg-amber-50" :class="highlighted === i ? 'bg-slate-50' : ''" @click="select(opt); value = '';" @mouseenter="highlighted = i" x-text="opt.label"></button>
-                                    </li>
-                                </template>
-                                <li x-show="filtered.length === 0" class="px-3 py-2 text-slate-400">No matches</li>
-                            </ul>
-                        </div>
+                    <div
+                        x-show="productOpen && productQuery.trim().length > 0"
+                        x-cloak
+                        x-on:click.outside="productOpen = false"
+                        class="absolute left-4 right-4 z-40 mt-1 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl sm:left-5 sm:right-5"
+                    >
+                        <template x-for="(p, i) in filteredProducts" :key="p.id">
+                            <button
+                                type="button"
+                                class="flex w-full items-center justify-between gap-3 border-b border-slate-50 px-4 py-3 text-left last:border-0 hover:bg-amber-50"
+                                :class="productHighlight === i ? 'bg-amber-50' : ''"
+                                x-on:click="addProduct(p); productQuery = ''; productOpen = false; focusScan()"
+                                x-on:mouseenter="productHighlight = i"
+                            >
+                                <span>
+                                    <span class="block font-medium text-slate-900" x-text="p.name"></span>
+                                    <span class="text-xs text-slate-500" x-text="p.sku + ' · stock ' + p.stock + ' ' + (p.unit || '')"></span>
+                                </span>
+                                <span class="shrink-0 font-semibold tabular-nums text-amber-800" x-text="'Rs. ' + Number(p.selling_price).toFixed(2)"></span>
+                            </button>
+                        </template>
+                        <p x-show="filteredProducts.length === 0" class="px-4 py-6 text-center text-sm text-slate-400">No products found</p>
                     </div>
                 </div>
 
-                <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <div class="border-b px-4 py-3">
-                        <h3 class="font-semibold text-slate-800">Cart</h3>
+                <div class="overflow-hidden rounded-2xl border border-walnut-200/80 bg-white shadow-sm">
+                    <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/80 px-4 py-3 sm:px-5">
+                        <h3 class="font-semibold text-slate-800">Cart <span class="text-sm font-normal text-slate-500" x-text="'(' + items.length + ')'"></span></h3>
+                        <button type="button" x-show="items.length" x-cloak x-on:click="items = []" class="text-xs font-semibold text-rose-600 hover:text-rose-800">Clear cart</button>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm">
-                            <thead class="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
-                                <tr>
-                                    <th class="px-4 py-3">Product</th>
-                                    <th class="px-4 py-3 w-24">Qty</th>
-                                    <th class="px-4 py-3 w-28">Price</th>
-                                    <th class="px-4 py-3 w-24">Disc.</th>
-                                    <th class="px-4 py-3 w-28 text-right">Total</th>
-                                    <th class="px-4 py-3 w-12"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="(item, index) in items" :key="item._key">
-                                    <tr class="border-t">
-                                        <td class="px-4 py-3">
-                                            <input type="hidden" :name="'items['+index+'][product_id]'" :value="item.product_id">
-                                            <p class="font-medium text-slate-800" x-text="item.name"></p>
-                                            <p class="text-xs text-slate-500" x-text="item.sku + (item.unit ? ' · ' + item.unit : '')"></p>
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            <input type="number" step="0.001" min="0.001" :name="'items['+index+'][quantity]'" x-model.number="item.quantity" class="w-full rounded-md border-gray-300 text-sm" required>
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            <input type="number" step="0.01" min="0" :name="'items['+index+'][unit_price]'" x-model.number="item.unit_price" class="w-full rounded-md border-gray-300 text-sm" required>
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            <input type="number" step="0.01" min="0" :name="'items['+index+'][discount]'" x-model.number="item.discount" class="w-full rounded-md border-gray-300 text-sm">
-                                        </td>
-                                        <td class="px-4 py-3 text-right font-medium" x-text="'Rs. ' + lineTotal(item).toFixed(2)"></td>
-                                        <td class="px-4 py-3">
-                                            <button type="button" @click="removeItem(index)" class="btn btn-danger-outline btn-sm">×</button>
-                                        </td>
-                                    </tr>
-                                </template>
-                                <tr x-show="items.length === 0">
-                                    <td colspan="6" class="px-4 py-8 text-center text-slate-400">Scan or search to add products</td>
-                                </tr>
-                            </tbody>
-                        </table>
+
+                    <div class="divide-y divide-slate-100">
+                        <template x-for="(item, index) in items" :key="item._key">
+                            <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:px-5">
+                                <input type="hidden" :name="'items['+index+'][product_id]'" :value="item.product_id">
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate font-semibold text-slate-900" x-text="item.name"></p>
+                                    <p class="text-xs text-slate-500" x-text="item.sku"></p>
+                                </div>
+                                <div class="flex flex-wrap items-end gap-2 sm:gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-semibold uppercase text-slate-400">Qty</label>
+                                        <input type="number" step="0.001" min="0.001" :name="'items['+index+'][quantity]'" x-model.number="item.quantity" class="w-20 rounded-lg border-slate-300 text-sm" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-semibold uppercase text-slate-400">Price</label>
+                                        <input type="number" step="0.01" min="0" :name="'items['+index+'][unit_price]'" x-model.number="item.unit_price" class="w-24 rounded-lg border-slate-300 text-sm" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-semibold uppercase text-slate-400">Disc.</label>
+                                        <input type="number" step="0.01" min="0" :name="'items['+index+'][discount]'" x-model.number="item.discount" class="w-20 rounded-lg border-slate-300 text-sm">
+                                    </div>
+                                    <div class="min-w-[5.5rem] pb-2 text-right">
+                                        <p class="text-[10px] font-semibold uppercase text-slate-400">Line</p>
+                                        <p class="font-bold tabular-nums text-slate-900" x-text="'Rs. ' + lineTotal(item).toFixed(2)"></p>
+                                    </div>
+                                    <button type="button" x-on:click="removeItem(index)" class="mb-1 rounded-lg px-2.5 py-2 text-sm font-bold text-rose-600 hover:bg-rose-50" title="Remove">×</button>
+                                </div>
+                            </div>
+                        </template>
+                        <div x-show="items.length === 0" class="px-4 py-16 text-center">
+                            <p class="text-lg font-medium text-slate-400">Cart is empty</p>
+                            <p class="mt-1 text-sm text-slate-400">Scan a barcode or search a product to start</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="space-y-4">
-                <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+            {{-- Right: checkout panel --}}
+            <div class="xl:col-span-4">
+                <div class="sticky top-4 space-y-4 rounded-2xl border border-walnut-200/80 bg-white p-4 shadow-md sm:p-5">
                     <div>
-                        <x-input-label value="Customer" />
-                        <div class="relative mt-1"
-                            x-data="searchableSelect({
-                                options: @json($customerOptions),
-                                value: @json((string) old('customer_id', '')),
-                                name: 'customer_id',
-                                allowEmpty: true,
-                                emptyLabel: 'Walk-in (type name)',
-                                placeholder: 'Search customer…',
-                                onChange: (v) => { customerId = v; },
-                            })"
-                            @click.outside="open = false"
-                        >
-                            @include('components.partials.searchable-select-inner')
-                        </div>
-                    </div>
-                    <div x-show="!customerId" x-cloak>
-                        <x-input-label for="walk_in_name" value="Walk-in name" />
-                        <x-text-input id="walk_in_name" name="walk_in_name" class="mt-1 block w-full" :value="old('walk_in_name')" placeholder="Name on bill" x-bind:required="!customerId" />
-                    </div>
-                    <div>
-                        <x-input-label for="sale_date" value="Date" />
-                        <x-text-input id="sale_date" name="sale_date" type="date" class="mt-1 block w-full" :value="old('sale_date', now()->toDateString())" required />
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <x-input-label for="discount" value="Discount" />
-                            <input id="discount" name="discount" type="number" step="0.01" min="0" x-model.number="discount" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                        </div>
-                        <div>
-                            <x-input-label for="tax" value="Tax" />
-                            <input id="tax" name="tax" type="number" step="0.01" min="0" x-model.number="tax" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
-                    <div class="rounded-lg bg-slate-900 px-4 py-3 text-white">
-                        <p class="text-xs uppercase tracking-wide text-slate-300">Total</p>
-                        <p class="text-3xl font-bold tabular-nums" x-text="'Rs. ' + grandTotal().toFixed(2)"></p>
-                    </div>
-
-                    @if (auth()->user()->canConfirmTill())
-                        <div>
-                            <x-input-label value="Payment" />
-                            <div class="relative mt-1"
-                                x-data="searchableSelect({
-                                    options: [
-                                        { value: 'cash', label: 'Cash' },
-                                        { value: 'card', label: 'Card' },
-                                        { value: 'bank_transfer', label: 'Bank Transfer' },
-                                        { value: 'credit', label: 'Credit (pay later)' },
-                                    ],
-                                    value: @json((string) old('payment_method', 'cash')),
-                                    name: 'payment_method',
-                                    allowEmpty: false,
-                                    emptyLabel: 'Cash',
-                                    placeholder: 'Payment method',
-                                    onChange: (v) => { paymentMethod = v; },
-                                })"
-                                @click.outside="open = false"
+                        <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Customer</label>
+                        <input type="hidden" name="customer_id" :value="customerId">
+                        <div class="relative mt-2">
+                            <input
+                                type="text"
+                                x-model="customerQuery"
+                                x-on:focus="customerOpen = true"
+                                class="block w-full rounded-xl border-slate-300 px-3 py-2.5 text-sm focus:border-amber-500 focus:ring-amber-500"
+                                placeholder="Search registered customer…"
+                                autocomplete="off"
                             >
-                                @include('components.partials.searchable-select-inner')
+                            <button
+                                type="button"
+                                x-show="customerId"
+                                x-cloak
+                                x-on:click="clearCustomer()"
+                                class="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 hover:text-slate-700"
+                            >Clear</button>
+                            <div
+                                x-show="customerOpen"
+                                x-cloak
+                                x-on:click.outside="customerOpen = false"
+                                class="absolute z-30 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg"
+                            >
+                                <button type="button" class="block w-full px-3 py-2.5 text-left text-sm text-slate-500 hover:bg-amber-50" x-on:click="clearCustomer(); customerOpen = false">Walk-in customer</button>
+                                <template x-for="c in filteredCustomers" :key="c.id">
+                                    <button
+                                        type="button"
+                                        class="block w-full px-3 py-2.5 text-left text-sm hover:bg-amber-50"
+                                        x-on:click="selectCustomer(c)"
+                                    >
+                                        <span class="font-medium text-slate-900" x-text="c.name"></span>
+                                        <span class="block text-xs text-slate-500" x-text="c.phone || ''"></span>
+                                    </button>
+                                </template>
                             </div>
                         </div>
+                        <p x-show="customerId" x-cloak class="mt-1 text-sm font-medium text-emerald-800" x-text="selectedCustomerLabel"></p>
+                        <div x-show="!customerId" x-cloak class="mt-2">
+                            <input
+                                type="text"
+                                name="walk_in_name"
+                                x-model="walkInName"
+                                class="block w-full rounded-xl border-slate-300 px-3 py-2.5 text-sm"
+                                placeholder="Walk-in name on bill"
+                                x-bind:required="!customerId"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="sale_date" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Date</label>
+                        <input id="sale_date" name="sale_date" type="date" value="{{ old('sale_date', now()->toDateString()) }}" required class="mt-2 block w-full rounded-xl border-slate-300 text-sm">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label for="discount" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Discount</label>
+                            <input id="discount" name="discount" type="number" step="0.01" min="0" x-model.number="discount" class="mt-2 block w-full rounded-xl border-slate-300 text-sm">
+                        </div>
+                        <div>
+                            <label for="tax" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Tax</label>
+                            <input id="tax" name="tax" type="number" step="0.01" min="0" x-model.number="tax" class="mt-2 block w-full rounded-xl border-slate-300 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="rounded-2xl bg-gradient-to-br from-walnut-900 to-walnut-800 px-4 py-4 text-white shadow-inner">
+                        <p class="text-xs font-semibold uppercase tracking-wider text-amber-200/80">Bill total</p>
+                        <p class="mt-1 text-4xl font-bold tabular-nums tracking-tight" x-text="'Rs. ' + grandTotal().toFixed(2)"></p>
+                        <p class="mt-1 text-xs text-white/60" x-text="items.length + ' item(s)'"></p>
+                    </div>
+
+                    @if (auth()->user()->canConfirmTill())
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Payment</p>
+                            <input type="hidden" name="payment_method" :value="paymentMethod">
+                            <div class="mt-2 grid grid-cols-2 gap-2">
+                                <template x-for="method in paymentMethods" :key="method.value">
+                                    <button
+                                        type="button"
+                                        class="rounded-xl border px-3 py-2.5 text-sm font-semibold transition"
+                                        :class="paymentMethod === method.value ? 'border-amber-500 bg-amber-50 text-amber-950 ring-2 ring-amber-400' : 'border-slate-200 bg-white text-slate-700 hover:border-amber-300'"
+                                        x-on:click="paymentMethod = method.value"
+                                        x-text="method.label"
+                                    ></button>
+                                </template>
+                            </div>
+                        </div>
+
                         <div x-show="paymentMethod !== 'credit'" x-cloak>
-                            <x-input-label for="payment_amount" value="Amount paid (Rs.)" />
-                            <input id="payment_amount" name="payment_amount" type="number" step="0.01" min="0.01" x-model.number="tendered" class="mt-1 block w-full rounded-md border-gray-300 text-lg font-semibold" value="{{ old('payment_amount') }}">
-                            <p class="mt-2 text-sm text-emerald-700" x-show="(Number(tendered) || 0) > grandTotal()">
-                                Change: Rs. <span x-text="Math.max(0, (Number(tendered) || 0) - grandTotal()).toFixed(2)"></span>
+                            <label for="payment_amount" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Amount paid</label>
+                            <input
+                                id="payment_amount"
+                                name="payment_amount"
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                x-model.number="tendered"
+                                class="mt-2 block w-full rounded-xl border-slate-300 px-3 py-3 text-xl font-bold tabular-nums focus:border-amber-500 focus:ring-amber-500"
+                                placeholder="0.00"
+                            >
+                            <button type="button" class="mt-2 text-xs font-semibold text-amber-800 hover:underline" x-on:click="tendered = grandTotal()">Exact amount</button>
+                            <p class="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800" x-show="changeDue() > 0" x-cloak>
+                                Change: Rs. <span x-text="changeDue().toFixed(2)"></span>
+                            </p>
+                            <p class="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-800" x-show="tendered > 0 && tendered < grandTotal()" x-cloak>
+                                Balance: Rs. <span x-text="Math.max(0, grandTotal() - tendered).toFixed(2)"></span>
                             </p>
                         </div>
+                        <p x-show="paymentMethod === 'credit'" x-cloak class="text-sm text-slate-500">Credit sale — full balance due on the bill.</p>
                     @endif
-                </div>
 
-                <div class="flex flex-col gap-2">
-                    @if (auth()->user()->canConfirmTill())
-                        <button type="submit" name="complete" value="1" class="btn btn-success w-full justify-center py-3 text-base" :disabled="items.length === 0">
-                            Pay &amp; thermal print
+                    <div class="space-y-2 pt-1">
+                        @if (auth()->user()->canConfirmTill())
+                            <button
+                                type="submit"
+                                name="complete"
+                                value="1"
+                                class="btn btn-success w-full justify-center rounded-xl py-3.5 text-base font-bold shadow-sm"
+                                :disabled="items.length === 0"
+                                :class="items.length === 0 ? 'opacity-50 cursor-not-allowed' : ''"
+                            >
+                                Pay &amp; print receipt
+                            </button>
+                        @endif
+                        <button
+                            type="submit"
+                            class="btn btn-secondary w-full justify-center rounded-xl py-2.5"
+                            :disabled="items.length === 0"
+                            :class="items.length === 0 ? 'opacity-50 cursor-not-allowed' : ''"
+                        >
+                            Save draft
                         </button>
-                    @endif
-                    <button type="submit" class="btn btn-primary w-full justify-center" :disabled="items.length === 0">Save draft</button>
-                    <a href="{{ route('store.sales.index') }}" class="btn btn-secondary w-full justify-center">Cancel</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -245,9 +296,22 @@
             function posForm() {
                 return {
                     products: @json($productOptions),
+                    customers: @json($customerOptions),
                     items: [],
                     customerId: @json((string) old('customer_id', '')),
+                    walkInName: @json((string) old('walk_in_name', '')),
+                    customerQuery: '',
+                    customerOpen: false,
+                    productQuery: '',
+                    productOpen: false,
+                    productHighlight: 0,
                     paymentMethod: @json((string) old('payment_method', 'cash')),
+                    paymentMethods: [
+                        { value: 'cash', label: 'Cash' },
+                        { value: 'card', label: 'Card' },
+                        { value: 'bank_transfer', label: 'Bank' },
+                        { value: 'credit', label: 'Credit' },
+                    ],
                     tendered: {{ (float) old('payment_amount', 0) }},
                     discount: {{ (float) old('discount', 0) }},
                     tax: {{ (float) old('tax', 0) }},
@@ -256,43 +320,86 @@
                     scanOk: false,
                     keySeq: 0,
                     init() {
-                        this.$nextTick(() => this.$refs.scan?.focus());
+                        this.focusScan();
+                    },
+                    focusScan() {
+                        this.$nextTick(() => this.$refs.scan && this.$refs.scan.focus());
+                    },
+                    get filteredProducts() {
+                        const q = this.productQuery.trim().toLowerCase();
+                        if (!q) return [];
+                        return this.products.filter((p) => {
+                            return (p.name + ' ' + p.sku).toLowerCase().includes(q);
+                        }).slice(0, 40);
+                    },
+                    get filteredCustomers() {
+                        const q = this.customerQuery.trim().toLowerCase();
+                        if (!q) return this.customers.slice(0, 30);
+                        return this.customers.filter((c) => {
+                            return (c.name + ' ' + (c.phone || '')).toLowerCase().includes(q);
+                        }).slice(0, 30);
+                    },
+                    get selectedCustomerLabel() {
+                        const c = this.customers.find((x) => String(x.id) === String(this.customerId));
+                        return c ? (c.name + (c.phone ? ' · ' + c.phone : '')) : '';
+                    },
+                    highlightProduct(dir) {
+                        const max = this.filteredProducts.length - 1;
+                        if (max < 0) return;
+                        this.productHighlight = Math.max(0, Math.min(max, this.productHighlight + dir));
+                    },
+                    pickHighlightedProduct() {
+                        const p = this.filteredProducts[this.productHighlight];
+                        if (p) {
+                            this.addProduct(p);
+                            this.productQuery = '';
+                            this.productOpen = false;
+                            this.focusScan();
+                        } else {
+                            this.applyScan();
+                        }
+                    },
+                    selectCustomer(c) {
+                        this.customerId = String(c.id);
+                        this.customerQuery = c.name;
+                        this.walkInName = '';
+                        this.customerOpen = false;
+                    },
+                    clearCustomer() {
+                        this.customerId = '';
+                        this.customerQuery = '';
                     },
                     prepareSubmit(e) {
                         if (this.items.length === 0) {
                             e.preventDefault();
                             this.scanMessage = 'Add at least one product.';
                             this.scanOk = false;
+                            this.focusScan();
                         }
                     },
                     findProduct(code) {
                         const q = String(code || '').trim().toLowerCase();
                         if (!q) return null;
-                        return this.products.find(p =>
-                            String(p.sku).toLowerCase() === q || String(p.id) === q
-                        ) || null;
+                        return this.products.find((p) => String(p.sku).toLowerCase() === q || String(p.id) === q) || null;
                     },
                     applyScan() {
-                        const product = this.findProduct(this.scan);
+                        const code = this.scan;
+                        const product = this.findProduct(code);
                         if (!product) {
-                            this.scanMessage = 'No product for "' + this.scan + '"';
+                            this.scanMessage = code ? ('No product for "' + code + '"') : 'Scan or type a SKU first.';
                             this.scanOk = false;
                             this.scan = '';
+                            this.focusScan();
                             return;
                         }
                         this.addProduct(product);
                         this.scanMessage = 'Added ' + product.name;
                         this.scanOk = true;
                         this.scan = '';
-                        this.$nextTick(() => this.$refs.scan?.focus());
-                    },
-                    addProductById(id) {
-                        const product = this.products.find(p => String(p.id) === String(id));
-                        if (product) this.addProduct(product);
-                        this.$nextTick(() => this.$refs.scan?.focus());
+                        this.focusScan();
                     },
                     addProduct(product) {
-                        const existing = this.items.find(i => String(i.product_id) === String(product.id));
+                        const existing = this.items.find((i) => String(i.product_id) === String(product.id));
                         if (existing) {
                             existing.quantity = (Number(existing.quantity) || 0) + 1;
                             return;
@@ -318,6 +425,9 @@
                     grandTotal() {
                         const subtotal = this.items.reduce((sum, item) => sum + this.lineTotal(item), 0);
                         return Math.max(0, subtotal - (Number(this.discount) || 0) + (Number(this.tax) || 0));
+                    },
+                    changeDue() {
+                        return Math.max(0, (Number(this.tendered) || 0) - this.grandTotal());
                     },
                 };
             }

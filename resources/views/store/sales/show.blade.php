@@ -83,10 +83,10 @@
                                 allowEmpty: false,
                                 emptyLabel: 'Cash',
                                 placeholder: 'Payment method',
-                                onChange: (v) => { method = v; },
-                                getValue: () => method,
+                                onChange: function (v) { method = v; },
+                                getValue: function () { return method; },
                             })"
-                            @click.outside="open = false"
+                            x-on:click.outside="open = false"
                         >
                             @include('components.partials.searchable-select-inner')
                         </div>

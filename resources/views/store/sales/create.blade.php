@@ -55,10 +55,10 @@
                         allowEmpty: true,
                         emptyLabel: 'Walk-in (type name)',
                         placeholder: 'Search customer…',
-                        onChange: (v) => { customerId = v; },
-                        getValue: () => customerId,
+                        onChange: function (v) { customerId = v; },
+                        getValue: function () { return customerId; },
                     })"
-                    @click.outside="open = false"
+                    x-on:click.outside="open = false"
                 >
                     @include('components.partials.searchable-select-inner')
                 </div>
@@ -81,7 +81,7 @@
         <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <div class="flex items-center justify-between border-b px-5 py-3">
                 <h3 class="font-semibold text-slate-800">Cart</h3>
-                <button type="button" @click="addItem()" class="btn btn-secondary btn-sm">Add product</button>
+                <button type="button" x-on:click="addItem()" class="btn btn-secondary btn-sm">Add product</button>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
@@ -101,21 +101,17 @@
                                 <td class="px-4 py-3">
                                     <div class="relative"
                                         x-data="searchableSelect({
-                                            options: products.map(p => ({
-                                                value: String(p.id),
-                                                label: p.sku + ' — ' + p.name + ' (' + p.stock + ' ' + (p.unit || '') + ')',
-                                                search: p.sku + ' ' + p.name,
-                                            })),
+                                            options: productSelectOptions,
                                             value: item.product_id,
-                                            name: () => 'items[' + index + '][product_id]',
+                                            name: function () { return 'items[' + index + '][product_id]'; },
                                             required: true,
                                             allowEmpty: true,
                                             emptyLabel: 'Select product',
                                             placeholder: 'Search product…',
-                                            onChange: (v) => { item.product_id = v; applyProduct(item); },
-                                            getValue: () => item.product_id,
+                                            onChange: function (v) { item.product_id = v; applyProduct(item); },
+                                            getValue: function () { return item.product_id; },
                                         })"
-                                        @click.outside="open = false"
+                                        x-on:click.outside="open = false"
                                     >
                                         @include('components.partials.searchable-select-inner')
                                     </div>
@@ -131,7 +127,7 @@
                                 </td>
                                 <td class="px-4 py-3 text-right font-medium" x-text="'Rs. ' + lineTotal(item).toFixed(2)"></td>
                                 <td class="px-4 py-3">
-                                    <button type="button" @click="removeItem(index)" class="btn btn-danger-outline btn-sm">Remove</button>
+                                    <button type="button" x-on:click="removeItem(index)" class="btn btn-danger-outline btn-sm">Remove</button>
                                 </td>
                             </tr>
                         </template>
@@ -171,10 +167,10 @@
                             allowEmpty: false,
                             emptyLabel: 'Cash',
                             placeholder: 'Payment method',
-                            onChange: (v) => { paymentMethod = v; },
-                            getValue: () => paymentMethod,
+                            onChange: function (v) { paymentMethod = v; },
+                            getValue: function () { return paymentMethod; },
                         })"
-                        @click.outside="open = false"
+                        x-on:click.outside="open = false"
                     >
                         @include('components.partials.searchable-select-inner')
                     </div>
@@ -212,6 +208,11 @@
             function saleForm() {
                 return {
                     products: @json($productOptions),
+                    productSelectOptions: @json($productOptions->map(fn ($p) => [
+                        'value' => (string) $p['id'],
+                        'label' => $p['sku'].' — '.$p['name'].' ('.$p['stock'].' '.($p['unit'] ?? '').')',
+                        'search' => $p['sku'].' '.$p['name'],
+                    ])->values()),
                     items: @json($existingItems),
                     customerId: @json((string) old('customer_id', $sale->customer_id ?? '')),
                     paymentMethod: @json((string) old('payment_method', 'cash')),

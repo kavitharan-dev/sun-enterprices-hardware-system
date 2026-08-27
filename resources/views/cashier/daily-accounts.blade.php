@@ -342,10 +342,10 @@
                                 allowEmpty: false,
                                 emptyLabel: 'Select type',
                                 placeholder: 'Search type…',
-                                onChange: (v) => { type = v; },
-                                getValue: () => type,
+                                onChange: function (v) { type = v; },
+                                getValue: function () { return type; },
                             })"
-                            @click.outside="open = false"
+                            x-on:click.outside="open = false"
                         >
                             @include('components.partials.searchable-select-inner')
                         </div>

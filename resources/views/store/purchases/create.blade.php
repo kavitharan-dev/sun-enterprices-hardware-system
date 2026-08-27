@@ -64,7 +64,7 @@
         <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <div class="flex items-center justify-between border-b px-5 py-3">
                 <h3 class="font-semibold text-slate-800">Line items</h3>
-                <button type="button" @click="addItem()" class="btn btn-secondary btn-sm">Add line</button>
+                <button type="button" x-on:click="addItem()" class="btn btn-secondary btn-sm">Add line</button>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
@@ -83,21 +83,17 @@
                                 <td class="px-4 py-3">
                                     <div class="relative"
                                         x-data="searchableSelect({
-                                            options: products.map(p => ({
-                                                value: String(p.id),
-                                                label: p.sku + ' — ' + p.name,
-                                                search: p.sku + ' ' + p.name,
-                                            })),
+                                            options: productSelectOptions,
                                             value: item.product_id,
-                                            name: () => 'items[' + index + '][product_id]',
+                                            name: function () { return 'items[' + index + '][product_id]'; },
                                             required: true,
                                             allowEmpty: true,
                                             emptyLabel: 'Select product',
                                             placeholder: 'Search product…',
-                                            onChange: (v) => { item.product_id = v; applyProduct(item); },
-                                            getValue: () => item.product_id,
+                                            onChange: function (v) { item.product_id = v; applyProduct(item); },
+                                            getValue: function () { return item.product_id; },
                                         })"
-                                        @click.outside="open = false"
+                                        x-on:click.outside="open = false"
                                     >
                                         @include('components.partials.searchable-select-inner')
                                     </div>
@@ -110,7 +106,7 @@
                                 </td>
                                 <td class="px-4 py-3 text-right font-medium" x-text="'Rs. ' + lineTotal(item).toFixed(2)"></td>
                                 <td class="px-4 py-3">
-                                    <button type="button" @click="removeItem(index)" class="btn btn-danger-outline btn-sm">Remove</button>
+                                    <button type="button" x-on:click="removeItem(index)" class="btn btn-danger-outline btn-sm">Remove</button>
                                 </td>
                             </tr>
                         </template>
@@ -149,6 +145,11 @@
             function purchaseForm() {
                 return {
                     products: @json($productOptions),
+                    productSelectOptions: @json($productOptions->map(fn ($p) => [
+                        'value' => (string) $p['id'],
+                        'label' => $p['sku'].' — '.$p['name'],
+                        'search' => $p['sku'].' '.$p['name'],
+                    ])->values()),
                     items: @json($existingItems),
                     discount: {{ (float) old('discount', $purchase->discount ?? 0) }},
                     tax: {{ (float) old('tax', $purchase->tax ?? 0) }},

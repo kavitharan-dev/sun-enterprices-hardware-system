@@ -68,7 +68,7 @@
         <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <div class="flex items-center justify-between border-b px-5 py-3">
                 <h3 class="font-semibold text-slate-800">Materials</h3>
-                <button type="button" @click="addItem()" class="btn btn-secondary btn-sm">Add product</button>
+                <button type="button" x-on:click="addItem()" class="btn btn-secondary btn-sm">Add product</button>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
@@ -86,21 +86,17 @@
                                 <td class="px-4 py-3">
                                     <div class="relative"
                                         x-data="searchableSelect({
-                                            options: products.map(p => ({
-                                                value: String(p.id),
-                                                label: p.sku + ' — ' + p.name + ' (' + p.stock + ' ' + (p.unit || '') + ')',
-                                                search: p.sku + ' ' + p.name,
-                                            })),
+                                            options: productSelectOptions,
                                             value: item.product_id,
-                                            name: () => 'items[' + index + '][product_id]',
+                                            name: function () { return 'items[' + index + '][product_id]'; },
                                             required: true,
                                             allowEmpty: true,
                                             emptyLabel: 'Select product',
                                             placeholder: 'Search product…',
-                                            onChange: (v) => { item.product_id = v; },
-                                            getValue: () => item.product_id,
+                                            onChange: function (v) { item.product_id = v; },
+                                            getValue: function () { return item.product_id; },
                                         })"
-                                        @click.outside="open = false"
+                                        x-on:click.outside="open = false"
                                     >
                                         @include('components.partials.searchable-select-inner')
                                     </div>
@@ -112,7 +108,7 @@
                                     <input type="text" :name="'items['+index+'][notes]'" x-model="item.notes" class="w-full rounded-md border-gray-300 text-sm">
                                 </td>
                                 <td class="px-4 py-3">
-                                    <button type="button" @click="removeItem(index)" class="btn btn-danger-outline btn-sm">Remove</button>
+                                    <button type="button" x-on:click="removeItem(index)" class="btn btn-danger-outline btn-sm">Remove</button>
                                 </td>
                             </tr>
                         </template>
@@ -137,6 +133,11 @@
             function requestForm() {
                 return {
                     products: @json($productOptions),
+                    productSelectOptions: @json($productOptions->map(fn ($p) => [
+                        'value' => (string) $p['id'],
+                        'label' => $p['sku'].' — '.$p['name'].' ('.$p['stock'].' '.($p['unit'] ?? '').')',
+                        'search' => $p['sku'].' '.$p['name'],
+                    ])->values()),
                     items: @json($existingItems),
                     addItem() {
                         this.items.push({ product_id: '', quantity: 1, notes: '' });
