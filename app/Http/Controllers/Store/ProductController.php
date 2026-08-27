@@ -49,7 +49,7 @@ class ProductController extends Controller
     public function store(ProductRequest $request): RedirectResponse
     {
         $data = $request->safe()->except('opening_stock');
-        $data['sku'] = $data['sku'] ?: $this->nextSku();
+        $data['sku'] = ($data['sku'] ?? null) ?: $this->nextSku();
         $data['is_active'] = $request->boolean('is_active', true);
         $data['stock_quantity'] = 0;
 
@@ -99,7 +99,7 @@ class ProductController extends Controller
         $this->authorize('update', $product);
 
         $data = $request->safe()->except('opening_stock');
-        $data['sku'] = $data['sku'] ?: $product->sku;
+        $data['sku'] = ($data['sku'] ?? null) ?: $product->sku;
         $data['is_active'] = $request->boolean('is_active');
 
         $original = $product->only(['purchase_price', 'selling_price', 'name', 'min_stock_level']);

@@ -29,7 +29,12 @@ class UserController extends Controller
                         ->orWhere('phone', 'like', $term);
                 });
             })
-            ->when($request->filled('role'), fn ($query) => $query->role($request->string('role')))
+            ->when($request->filled('role'), function ($query) use ($request) {
+                $role = $request->string('role')->toString();
+                if (Role::query()->where('name', $role)->where('guard_name', 'web')->exists()) {
+                    $query->role($role);
+                }
+            })
             ->when($request->filled('status'), function ($query) use ($request) {
                 $query->where('is_active', $request->string('status') === 'active');
             })
@@ -140,10 +145,11 @@ class UserController extends Controller
             return false;
         }
 
-        return User::query()
-            ->role('admin')
-            ->where('is_active', true)
-            ->where('id', '!=', $user->id)
-            ->doesntExist();
+        return Role::query()->where('name', 'admin')->where('guard_name', 'web')->exists()
+            && User::query()
+                ->role('admin')
+                ->where('is_active', true)
+                ->where('id', '!=', $user->id)
+                ->doesntExist();
     }
 }

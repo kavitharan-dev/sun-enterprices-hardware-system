@@ -31,6 +31,9 @@ fi
 echo "Running migrations..."
 php artisan migrate --force
 
+echo "Ensuring application roles exist..."
+php artisan db:seed --force --class=EnsureRolesSeeder
+
 USER_COUNT="$(php -r "require 'vendor/autoload.php'; \$app=require 'bootstrap/app.php'; \$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); echo App\Models\User::query()->count();")"
 if [ "$USER_COUNT" = "0" ]; then
   echo "Seeding first-boot data..."

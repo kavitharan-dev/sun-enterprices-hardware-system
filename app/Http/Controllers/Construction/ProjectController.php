@@ -253,9 +253,22 @@ class ProjectController extends Controller
 
     private function formData(): array
     {
+        $siteManagers = collect();
+
+        if (\Spatie\Permission\Models\Role::query()
+            ->where('name', 'site_manager')
+            ->where('guard_name', 'web')
+            ->exists()) {
+            $siteManagers = User::query()
+                ->role('site_manager')
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+        }
+
         return [
             'customers' => Customer::query()->active()->orderBy('name')->get(),
-            'siteManagers' => User::query()->role('site_manager')->where('is_active', true)->orderBy('name')->get(),
+            'siteManagers' => $siteManagers,
             'statuses' => ProjectStatus::cases(),
         ];
     }
