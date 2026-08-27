@@ -42,7 +42,7 @@ class InvoiceService
             'name' => config('brand.name'),
             'tagline' => config('brand.tagline'),
             'address' => config('brand.address'),
-            'phone' => Setting::get('company_phone', ''),
+            'phone' => Setting::get('company_phone', config('brand.phone', '')),
             'email' => Setting::get('company_email', ''),
             'currency' => Setting::get('currency', 'Rs.'),
             'logo' => Setting::get('company_logo'),

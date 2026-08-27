@@ -12,7 +12,7 @@ class SettingsSeeder extends Seeder
         $settings = [
             'company_name' => 'SUN ENTERPRICES',
             'company_address' => 'Nilaweli, Trincomalee',
-            'company_phone' => '+94 11 234 5678',
+            'company_phone' => '+94781440789',
             'company_email' => 'info@sunenterprise.lk',
             'currency' => 'Rs.',
             'currency_code' => 'LKR',
