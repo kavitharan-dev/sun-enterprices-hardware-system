@@ -16,6 +16,20 @@ enum DailyAccountType: string
     public function label(): string
     {
         return match ($this) {
+            self::Sale => 'Hardware sale — money IN',
+            self::Purchase => 'Stock purchase — money OUT',
+            self::WorkerAdvance => 'Worker advance — money OUT',
+            self::WorkerSettlement => 'Worker salary — money OUT',
+            self::OwnerPayment => 'Site owner payment — money IN',
+            self::ProjectExpense => 'Site expense — money OUT',
+            self::OtherIncome => 'Other income — money IN',
+            self::OtherExpense => 'Other expense — money OUT',
+        };
+    }
+
+    public function shortLabel(): string
+    {
+        return match ($this) {
             self::Sale => 'Hardware sale',
             self::Purchase => 'Stock purchase',
             self::WorkerAdvance => 'Worker advance',
@@ -25,6 +39,11 @@ enum DailyAccountType: string
             self::OtherIncome => 'Other income',
             self::OtherExpense => 'Other expense',
         };
+    }
+
+    public function directionLabel(): string
+    {
+        return $this->isIncome() ? 'Money in' : 'Money out';
     }
 
     public function isIncome(): bool

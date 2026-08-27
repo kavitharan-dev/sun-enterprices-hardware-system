@@ -235,7 +235,7 @@ class DailyAccountTest extends TestCase
             ->assertSee('What is this money?')
             ->assertSee('Hardware sale')
             ->assertSee('Site owner payment')
-            ->assertSee('Method');
+            ->assertSee('Payment method');
 
         $this->actingAs($site)
             ->get(route('cashier.daily-accounts.index'))

@@ -1,7 +1,7 @@
 /**
  * Alpine searchable select — type-to-filter dropdown for forms.
  * Pass options: [{ value, label, search? }]
- * Open panels use fixed positioning so they are not clipped inside overflow tables.
+ * Panels teleport to <body> with fixed position so they never clip inside forms/tables.
  */
 export function registerSearchableSelect(Alpine) {
     Alpine.data('searchableSelect', (config = {}) => ({
@@ -19,7 +19,7 @@ export function registerSearchableSelect(Alpine) {
         nameFn: typeof config.name === 'function' ? config.name : null,
         onChange: typeof config.onChange === 'function' ? config.onChange : null,
         getValue: typeof config.getValue === 'function' ? config.getValue : null,
-        panelStyle: '',
+        panelStyle: 'display:none',
 
         init() {
             if (this.getValue) {
@@ -45,9 +45,13 @@ export function registerSearchableSelect(Alpine) {
 
             this.$watch('open', (isOpen) => {
                 if (isOpen) {
-                    this.$nextTick(() => this.positionPanel());
+                    this.positionPanel();
+                    this.$nextTick(() => {
+                        this.positionPanel();
+                        this.$refs.search?.focus();
+                    });
                 } else {
-                    this.panelStyle = '';
+                    this.panelStyle = 'display:none';
                 }
             });
         },
@@ -92,10 +96,10 @@ export function registerSearchableSelect(Alpine) {
 
             const rect = trigger.getBoundingClientRect();
             const gap = 4;
-            const minWidth = 288;
-            const maxWidth = Math.min(420, window.innerWidth - 16);
-            const width = Math.min(Math.max(rect.width, minWidth), maxWidth);
-            const maxHeight = Math.min(320, window.innerHeight - 24);
+            const minWidth = Math.max(rect.width, 300);
+            const maxWidth = Math.min(480, window.innerWidth - 16);
+            const width = Math.min(minWidth, maxWidth);
+            const maxHeight = Math.min(360, window.innerHeight - 24);
             let left = rect.left;
             if (left + width > window.innerWidth - 8) {
                 left = Math.max(8, window.innerWidth - width - 8);
@@ -108,7 +112,7 @@ export function registerSearchableSelect(Alpine) {
             const spaceBelow = window.innerHeight - rect.bottom - gap;
             const spaceAbove = rect.top - gap;
 
-            if (spaceBelow < Math.min(220, maxHeight) && spaceAbove > spaceBelow) {
+            if (spaceBelow < Math.min(240, maxHeight) && spaceAbove > spaceBelow) {
                 top = Math.max(8, rect.top - Math.min(maxHeight, spaceAbove) - gap);
             }
 
@@ -118,7 +122,8 @@ export function registerSearchableSelect(Alpine) {
                 `left:${Math.round(left)}px`,
                 `width:${Math.round(width)}px`,
                 `max-height:${Math.round(maxHeight)}px`,
-                'z-index:9999',
+                'z-index:10000',
+                'display:flex',
             ].join(';');
         },
 
@@ -131,10 +136,7 @@ export function registerSearchableSelect(Alpine) {
             if (this.open) {
                 this.query = '';
                 this.highlighted = -1;
-                this.$nextTick(() => {
-                    this.positionPanel();
-                    this.$refs.search?.focus();
-                });
+                this.positionPanel();
             }
         },
 
