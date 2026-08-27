@@ -30,7 +30,7 @@ class SaleService
             $totals = $this->calculateTotals($items, $data['discount'] ?? 0, $data['tax'] ?? 0);
 
             $sale = Sale::query()->create([
-                'customer_id' => $data['customer_id'] ?: null,
+                'customer_id' => ($data['customer_id'] ?? null) ?: null,
                 'walk_in_name' => ($data['customer_id'] ?? null) ? null : ($data['walk_in_name'] ?? null),
                 'sale_date' => $data['sale_date'],
                 'subtotal' => $totals['subtotal'],
@@ -63,7 +63,7 @@ class SaleService
             $totals = $this->calculateTotals($items, $data['discount'] ?? 0, $data['tax'] ?? 0);
 
             $sale->update([
-                'customer_id' => $data['customer_id'] ?: null,
+                'customer_id' => ($data['customer_id'] ?? null) ?: null,
                 'walk_in_name' => ($data['customer_id'] ?? null) ? null : ($data['walk_in_name'] ?? null),
                 'sale_date' => $data['sale_date'],
                 'subtotal' => $totals['subtotal'],

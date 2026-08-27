@@ -255,12 +255,16 @@ class NotificationService
     {
         $companyEmail = Setting::get('company_email');
 
-        $recipients = User::query()
-            ->role('admin')
-            ->where('is_active', true)
-            ->pluck('email')
-            ->filter()
-            ->values();
+        $recipients = collect();
+
+        if (\Spatie\Permission\Models\Role::query()->where('name', 'admin')->where('guard_name', 'web')->exists()) {
+            $recipients = User::query()
+                ->role('admin')
+                ->where('is_active', true)
+                ->pluck('email')
+                ->filter()
+                ->values();
+        }
 
         if ($companyEmail) {
             $recipients->push($companyEmail);

@@ -30,7 +30,7 @@ class MaterialRequestService
                 'project_id' => $data['project_id'],
                 'requested_by' => $userId,
                 'request_date' => $data['request_date'],
-                'required_date' => $data['required_date'] ?: null,
+                'required_date' => ($data['required_date'] ?? null) ?: null,
                 'status' => MaterialRequestStatus::Draft,
                 'notes' => $data['notes'] ?? null,
             ]);
@@ -54,7 +54,7 @@ class MaterialRequestService
             $request->update([
                 'project_id' => $data['project_id'],
                 'request_date' => $data['request_date'],
-                'required_date' => $data['required_date'] ?: null,
+                'required_date' => ($data['required_date'] ?? null) ?: null,
                 'notes' => $data['notes'] ?? null,
             ]);
 
