@@ -11,6 +11,13 @@ class CustomerRequest extends FormRequest
         return $this->user()?->canHandleSales() ?? false;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'credit_limit' => $this->input('credit_limit') ?? 0,
+        ]);
+    }
+
     public function rules(): array
     {
         return [
@@ -19,7 +26,7 @@ class CustomerRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:120'],
             'address' => ['nullable', 'string', 'max:500'],
             'nic' => ['nullable', 'string', 'max:30'],
-            'credit_limit' => ['nullable', 'numeric', 'min:0'],
+            'credit_limit' => ['required', 'numeric', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }

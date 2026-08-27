@@ -45,7 +45,7 @@ class WorkerController extends Controller
     {
         $this->authorize('create', Worker::class);
 
-        return view('construction.workers.create', ['statuses' => WorkerStatus::cases()]);
+        return view('construction.workers.create', $this->formData());
     }
 
     public function store(WorkerRequest $request): RedirectResponse
@@ -53,8 +53,6 @@ class WorkerController extends Controller
         $worker = Worker::query()->create([
             ...$request->validated(),
             'worker_code' => $this->documentNumbers->next('worker_prefix', 'WRK', Worker::class, 'worker_code'),
-            'daily_rate' => $request->input('daily_rate', 0),
-            'weekly_salary' => $request->input('weekly_salary', 0),
         ]);
 
         $this->logActivity('created', 'Worker', "Created worker {$worker->name}", $worker);
@@ -77,7 +75,7 @@ class WorkerController extends Controller
 
         return view('construction.workers.edit', [
             'worker' => $worker,
-            'statuses' => WorkerStatus::cases(),
+            ...$this->formData(),
         ]);
     }
 
@@ -85,11 +83,7 @@ class WorkerController extends Controller
     {
         $this->authorize('update', $worker);
 
-        $worker->update([
-            ...$request->validated(),
-            'daily_rate' => $request->input('daily_rate', 0),
-            'weekly_salary' => $request->input('weekly_salary', 0),
-        ]);
+        $worker->update($request->validated());
 
         $this->logActivity('updated', 'Worker', "Updated worker {$worker->name}", $worker);
 
@@ -109,5 +103,18 @@ class WorkerController extends Controller
         $this->logActivity('deleted', 'Worker', "Deleted worker {$name}");
 
         return redirect()->route('construction.workers.index')->with('success', 'Worker deleted.');
+    }
+
+    /**
+     * @return array{statusOptions: \Illuminate\Support\Collection<int, array{value: string, label: string}>}
+     */
+    private function formData(): array
+    {
+        return [
+            'statusOptions' => collect(WorkerStatus::cases())->map(fn (WorkerStatus $s) => [
+                'value' => $s->value,
+                'label' => $s->label(),
+            ])->values(),
+        ];
     }
 }

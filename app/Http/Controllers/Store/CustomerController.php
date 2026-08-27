@@ -46,7 +46,6 @@ class CustomerController extends Controller
     {
         $customer = Customer::query()->create([
             ...$request->safe()->except('is_active'),
-            'credit_limit' => $request->input('credit_limit', 0),
             'is_active' => $request->boolean('is_active', true),
         ]);
 
@@ -77,7 +76,6 @@ class CustomerController extends Controller
 
         $customer->update([
             ...$request->safe()->except('is_active'),
-            'credit_limit' => $request->input('credit_limit', 0),
             'is_active' => $request->boolean('is_active'),
         ]);
 
