@@ -189,11 +189,12 @@
                             <x-text-input id="manual_reference" name="reference_no" class="mt-1 block w-full" :value="old('reference_no')" placeholder="Optional" />
                         </div>
 
-                        <div x-show="type === 'worker_advance'" class="sm:col-span-2 rounded-lg border border-amber-100 bg-amber-50 px-3 py-3">
+                        <div x-show="type === 'worker_advance'" class="sm:col-span-2 rounded-lg border border-amber-100 bg-amber-50 px-3 py-3 space-y-2">
                             <label class="inline-flex items-start gap-2 text-sm text-slate-800">
                                 <input type="checkbox" name="deduct_from_week" value="1" class="mt-0.5 rounded border-gray-300" @checked(old('deduct_from_week'))>
                                 <span>Take this advance from this week’s salary (tick if yes)</span>
                             </label>
+                            <p class="text-xs text-amber-900/80">If that week’s salary is already paid, the advance is saved on the next open week automatically.</p>
                         </div>
 
                         <div x-show="type === 'worker_settlement'">

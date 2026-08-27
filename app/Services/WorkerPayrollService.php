@@ -66,6 +66,9 @@ class WorkerPayrollService
      * When $deductFromWeek is true it comes off this week's wage. When false the
      * worker still receives the full wage on Saturday and the advance becomes
      * debt carried into later weeks.
+     *
+     * If the pay week for the payment date is already settled (salary paid), the
+     * advance is attached to the current open week so the cashier is not blocked.
      */
     public function recordAdvance(Worker $worker, array $data, ?int $userId = null): WorkerPayment
     {
@@ -77,11 +80,7 @@ class WorkerPayrollService
 
         return DB::transaction(function () use ($worker, $data, $amount, $userId) {
             $date = Carbon::parse($data['payment_date'] ?? now()->toDateString());
-            $week = $this->weekFor($worker, $date, $userId);
-
-            if ($week->isSettled()) {
-                throw new RuntimeException('This week is already settled. Record the advance against the current week instead.');
-            }
+            $week = $this->openWeekFor($worker, $date, $userId);
 
             $deduct = (bool) ($data['deduct_from_week'] ?? true);
 
@@ -122,6 +121,29 @@ class WorkerPayrollService
 
             return $payment;
         });
+    }
+
+    /**
+     * Pay week that can still take advances / sheet edits for the given date.
+     * Settled weeks are skipped forward to the next open week.
+     */
+    public function openWeekFor(Worker $worker, string|Carbon $date, ?int $userId = null): WorkerPayrollWeek
+    {
+        $week = $this->weekFor($worker, $date, $userId);
+
+        if ($week->isSettled()) {
+            $week = $this->weekFor($worker, now(), $userId);
+        }
+
+        while ($week->isSettled()) {
+            $week = $this->weekFor(
+                $worker,
+                Carbon::parse($week->week_end)->addDay(),
+                $userId,
+            );
+        }
+
+        return $week;
     }
 
     /**

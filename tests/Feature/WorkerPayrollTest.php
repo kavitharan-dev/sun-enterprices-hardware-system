@@ -573,6 +573,34 @@ class WorkerPayrollTest extends TestCase
         $this->assertSame('2026-08-22', $week->week_end->toDateString());
     }
 
+    public function test_advance_on_a_settled_week_moves_to_the_next_open_week(): void
+    {
+        [$admin] = $this->seedRoles();
+        $worker = $this->worker(weeklySalary: 10000);
+        $payroll = app(WorkerPayrollService::class);
+
+        Carbon::setTestNow('2026-08-19 10:00:00');
+
+        $settled = $payroll->weekFor($worker, $this->wednesday(), $admin->id);
+        $payroll->settleWeek($settled, ['amount' => 10000, 'debt_deducted' => 0], $admin->id);
+        $this->assertTrue($settled->fresh()->isSettled());
+
+        $payment = $payroll->recordAdvance($worker, [
+            'amount' => 2000,
+            'payment_date' => $this->wednesday()->toDateString(),
+            'deduct_from_week' => false,
+        ], $admin->id);
+
+        $attached = $payment->fresh()->week;
+        $this->assertNotNull($attached);
+        $this->assertFalse($attached->isSettled());
+        $this->assertSame('2026-08-23', $attached->week_start->toDateString());
+        $this->assertSame(2000.0, (float) $payment->amount);
+        $this->assertSame($this->wednesday()->toDateString(), $payment->payment_date->toDateString());
+
+        Carbon::setTestNow();
+    }
+
     private function giveUndeductedAdvance(Worker $worker, User $admin, float $amount): WorkerPayrollWeek
     {
         $payroll = app(WorkerPayrollService::class);
