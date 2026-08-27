@@ -99,4 +99,51 @@ class PurchaseStockTest extends TestCase
             ->get(route('store.inventory.index'))
             ->assertOk();
     }
+
+    public function test_inventory_search_matches_product_name_case_insensitively(): void
+    {
+        Role::findOrCreate('cashier');
+
+        $user = User::factory()->create();
+        $user->assignRole('cashier');
+
+        $category = Category::query()->create(['name' => 'Paint']);
+        $unit = Unit::query()->create(['name' => 'Tin', 'symbol' => 'tin']);
+
+        Product::query()->create([
+            'sku' => '8901234567890',
+            'name' => 'Asian Paint White',
+            'category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'purchase_price' => 1000,
+            'selling_price' => 1200,
+            'min_stock_level' => 2,
+            'stock_quantity' => 10,
+            'is_active' => true,
+        ]);
+
+        Product::query()->create([
+            'sku' => '9999999999999',
+            'name' => 'Other Product',
+            'category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'purchase_price' => 100,
+            'selling_price' => 150,
+            'min_stock_level' => 1,
+            'stock_quantity' => 5,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('store.inventory.index', ['q' => 'asian paint']))
+            ->assertOk()
+            ->assertSee('Asian Paint White')
+            ->assertSee('8901234567890')
+            ->assertDontSee('Other Product');
+
+        $this->actingAs($user)
+            ->get(route('store.inventory.index', ['q' => '8901234567890']))
+            ->assertOk()
+            ->assertSee('Asian Paint White');
+    }
 }
