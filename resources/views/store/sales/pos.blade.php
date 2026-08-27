@@ -15,30 +15,17 @@
     ])->values();
 @endphp
 
-<x-app-layout>
-    <x-slot name="header">
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <h2 class="brand-wordmark text-2xl text-walnut-900">Point of Sale</h2>
-                <p class="mt-0.5 text-sm text-walnut-700/70">Scan or search · pay · thermal print · Daily Accounts</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ route('cashier.daily-accounts.index') }}" class="btn btn-secondary btn-sm">Daily Accounts</a>
-                <a href="{{ route('store.sales.create') }}" class="btn btn-secondary btn-sm">Classic form</a>
-            </div>
-        </div>
-    </x-slot>
-
+<x-pos-layout>
     <form
         method="POST"
         action="{{ route('store.sales.store') }}"
-        class="mx-auto max-w-7xl"
+        class="mx-auto h-full max-w-[1600px]"
         x-data="posForm()"
         x-on:submit="prepareSubmit"
     >
         @csrf
 
-        <div class="grid gap-5 xl:grid-cols-12">
+        <div class="grid gap-4 xl:grid-cols-12 xl:gap-5">
             {{-- Left: scan + cart --}}
             <div class="space-y-4 xl:col-span-8">
                 <div class="rounded-2xl border border-amber-300/80 bg-gradient-to-br from-amber-50 via-white to-sun-50 p-4 shadow-sm sm:p-5">
@@ -50,12 +37,12 @@
                             x-model="scan"
                             x-ref="scan"
                             x-on:keydown.enter.prevent="applyScan()"
-                            class="block w-full rounded-xl border-2 border-amber-300 bg-white px-4 py-3.5 font-mono text-lg shadow-inner focus:border-amber-500 focus:ring-amber-500"
+                            class="block w-full rounded-xl border-2 border-amber-300 bg-white px-4 py-4 font-mono text-xl shadow-inner focus:border-amber-500 focus:ring-amber-500"
                             placeholder="Scan barcode here…"
                             autocomplete="off"
                             autofocus
                         >
-                        <button type="button" x-on:click="applyScan()" class="btn btn-primary shrink-0 rounded-xl px-6 py-3.5 text-base">Add</button>
+                        <button type="button" x-on:click="applyScan()" class="btn btn-primary shrink-0 rounded-xl px-8 py-4 text-base">Add</button>
                     </div>
                     <p
                         x-show="scanMessage"
@@ -454,4 +441,4 @@
             }
         </script>
     @endpush
-</x-app-layout>
+</x-pos-layout>

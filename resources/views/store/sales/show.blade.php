@@ -69,26 +69,23 @@
                 @endunless
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
-                        <x-input-label for="payment_method" value="Payment method" />
-                        <div class="relative mt-1"
-                            x-data="searchableSelect({
-                                options: [
-                                    { value: 'cash', label: 'Cash' },
-                                    { value: 'card', label: 'Card' },
-                                    { value: 'bank_transfer', label: 'Bank Transfer' },
-                                    { value: 'credit', label: 'Credit (pay later)' },
-                                ],
-                                value: 'cash',
-                                name: 'payment_method',
-                                allowEmpty: false,
-                                emptyLabel: 'Cash',
-                                placeholder: 'Payment method',
-                                onChange: function (v) { method = v; },
-                                getValue: function () { return method; },
-                            })"
-                            x-on:click.outside="open = false"
-                        >
-                            @include('components.partials.searchable-select-inner')
+                        <x-input-label value="Payment method" />
+                        <input type="hidden" name="payment_method" :value="method">
+                        <div class="mt-2 grid grid-cols-2 gap-2">
+                            <template x-for="opt in [
+                                { value: 'cash', label: 'Cash' },
+                                { value: 'card', label: 'Card' },
+                                { value: 'bank_transfer', label: 'Bank' },
+                                { value: 'credit', label: 'Credit' },
+                            ]" :key="opt.value">
+                                <button
+                                    type="button"
+                                    class="rounded-xl border px-3 py-2 text-sm font-semibold"
+                                    :class="method === opt.value ? 'border-amber-500 bg-amber-50 text-amber-950 ring-2 ring-amber-400' : 'border-slate-200 bg-white text-slate-700'"
+                                    x-on:click="method = opt.value"
+                                    x-text="opt.label"
+                                ></button>
+                            </template>
                         </div>
                     </div>
                     <div x-show="method !== 'credit'">

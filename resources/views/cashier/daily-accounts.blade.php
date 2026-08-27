@@ -146,7 +146,7 @@
             </div>
         @endif
 
-        <form method="GET" class="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+        <form method="GET" class="grid gap-3 overflow-visible rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
             <div>
                 <x-input-label for="from" value="From" />
                 <x-text-input id="from" name="from" type="date" class="mt-1 block w-full" :value="$from" />
@@ -155,7 +155,7 @@
                 <x-input-label for="to" value="To" />
                 <x-text-input id="to" name="to" type="date" class="mt-1 block w-full" :value="$to" />
             </div>
-            <div>
+            <div class="relative z-30">
                 <x-input-label for="project_id" value="Project" />
                 <x-searchable-select
                     name="project_id"
@@ -167,7 +167,7 @@
                     class="mt-1"
                 />
             </div>
-            <div>
+            <div class="relative z-30">
                 <x-input-label for="worker_id" value="Worker" />
                 <x-searchable-select
                     name="worker_id"
@@ -179,7 +179,7 @@
                     class="mt-1"
                 />
             </div>
-            <div>
+            <div class="relative z-20">
                 <x-input-label for="type" value="Transaction type" />
                 <x-searchable-select
                     name="type"
@@ -320,45 +320,79 @@
             </form>
 
             @if ($canRecord)
-            <form method="POST" action="{{ route('cashier.daily-accounts.store') }}" class="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-1" x-data="{ type: '{{ old('type', 'owner_payment') }}' }">
+            @php
+                $typeOptions = collect($types)->map(fn ($t) => [
+                    'value' => $t->value,
+                    'label' => $t->label(),
+                ])->values();
+                $methodOptions = collect($methods)->map(fn ($m) => [
+                    'value' => $m->value,
+                    'label' => $m->label(),
+                ])->values();
+                $saleOptions = $openSales->map(fn ($s) => [
+                    'value' => (string) $s->id,
+                    'label' => ($s->invoice_no ?: 'Draft').' — '.$s->customerName().' — Rs. '.number_format((float) ($s->balance > 0 ? $s->balance : $s->total), 2),
+                    'search' => ($s->invoice_no ?: 'Draft').' '.$s->customerName(),
+                ])->values();
+                $purchaseOptions = $draftPurchases->map(fn ($p) => [
+                    'value' => (string) $p->id,
+                    'label' => $p->reference_no.' — '.($p->supplier?->name ?? '').' — Rs. '.number_format((float) $p->total, 2),
+                    'search' => $p->reference_no.' '.($p->supplier?->name ?? ''),
+                ])->values();
+                $projectOptions = $projects->map(fn ($p) => [
+                    'value' => (string) $p->id,
+                    'label' => $p->name,
+                    'search' => $p->name,
+                ])->values();
+                $workerOptions = $workers->map(fn ($w) => [
+                    'value' => (string) $w->id,
+                    'label' => $w->name,
+                    'search' => $w->name,
+                ])->values();
+                $expenseCategoryOptions = collect($expenseCategories)->map(fn ($c) => [
+                    'value' => $c->value,
+                    'label' => $c->label(),
+                ])->values();
+            @endphp
+            <form
+                method="POST"
+                action="{{ route('cashier.daily-accounts.store') }}"
+                class="space-y-4 overflow-visible rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-1"
+                x-data="dailyRecordForm({{ \Illuminate\Support\Js::from(old('type', 'owner_payment')) }})"
+            >
                 @csrf
                 <div>
                     <p class="font-semibold text-slate-800">Record money</p>
                     <p class="mt-1 text-sm text-slate-500">Enter the cash, card, or bank movement once. Daily Accounts posts it and the related sale, purchase, worker, or project updates automatically.</p>
                 </div>
-                <div class="grid gap-3 sm:grid-cols-2">
+
+                <div>
+                    <x-input-label value="What is this money?" />
+                    <input type="hidden" name="type" :value="type">
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                        <template x-for="opt in typeOptions" :key="opt.value">
+                            <button
+                                type="button"
+                                class="rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition"
+                                :class="type === opt.value ? 'border-amber-500 bg-amber-50 text-amber-950 ring-2 ring-amber-400' : 'border-slate-200 bg-white text-slate-700 hover:border-amber-300'"
+                                x-on:click="type = opt.value"
+                                x-text="opt.label"
+                            ></button>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="grid gap-3 overflow-visible sm:grid-cols-2">
                     <div>
                         <x-input-label for="occurred_on" value="Date" />
                         <x-text-input id="occurred_on" name="occurred_on" type="date" class="mt-1 block w-full" :value="old('occurred_on', $from)" required />
                     </div>
-                    <div>
-                        <x-input-label for="manual_type" value="What is this money?" />
-                        <div class="relative mt-1"
-                            x-data="searchableSelect({
-                                options: @json(collect($types)->map(fn ($t) => ['value' => $t->value, 'label' => $t->label()])->values()),
-                                value: @json((string) old('type', 'owner_payment')),
-                                name: 'type',
-                                required: true,
-                                allowEmpty: false,
-                                emptyLabel: 'Select type',
-                                placeholder: 'Search type…',
-                                onChange: function (v) { type = v; },
-                                getValue: function () { return type; },
-                            })"
-                            x-on:click.outside="open = false"
-                        >
-                            @include('components.partials.searchable-select-inner')
-                        </div>
-                    </div>
-                    <div x-show="type === 'sale'" x-cloak class="sm:col-span-2">
+
+                    <div x-show="type === 'sale'" x-cloak class="sm:col-span-2 relative z-30">
                         <x-input-label for="sale_id" value="Sale" />
                         <x-searchable-select
                             name="sale_id"
-                            :options="$openSales->map(fn ($s) => [
-                                'value' => (string) $s->id,
-                                'label' => ($s->invoice_no ?: 'Draft').' — '.$s->customerName().' — Rs. '.number_format((float) ($s->balance > 0 ? $s->balance : $s->total), 2),
-                                'search' => ($s->invoice_no ?: 'Draft').' '.$s->customerName(),
-                            ])->values()"
+                            :options="$saleOptions"
                             :value="(string) old('sale_id')"
                             empty-label="Select a draft or unpaid sale"
                             :allow-empty="true"
@@ -366,15 +400,12 @@
                             class="mt-1"
                         />
                     </div>
-                    <div x-show="type === 'purchase'" x-cloak class="sm:col-span-2">
+
+                    <div x-show="type === 'purchase'" x-cloak class="sm:col-span-2 relative z-30">
                         <x-input-label for="purchase_id" value="Purchase" />
                         <x-searchable-select
                             name="purchase_id"
-                            :options="$draftPurchases->map(fn ($p) => [
-                                'value' => (string) $p->id,
-                                'label' => $p->reference_no.' — '.($p->supplier?->name ?? '').' — Rs. '.number_format((float) $p->total, 2),
-                                'search' => $p->reference_no.' '.($p->supplier?->name ?? ''),
-                            ])->values()"
+                            :options="$purchaseOptions"
                             :value="(string) old('purchase_id')"
                             empty-label="Select a draft purchase to pay"
                             :allow-empty="true"
@@ -382,35 +413,38 @@
                             class="mt-1"
                         />
                     </div>
-                    <div x-show="['owner_payment','project_expense','worker_advance','worker_settlement'].includes(type)" x-cloak>
+
+                    <div x-show="needsProject" x-cloak class="relative z-30">
                         <x-input-label for="manual_project" value="Project" />
                         <x-searchable-select
                             name="project_id"
-                            :options="$projects->map(fn ($p) => ['value' => (string) $p->id, 'label' => $p->name, 'search' => $p->name])->values()"
+                            :options="$projectOptions"
                             :value="(string) old('project_id')"
-                            :empty-label="in_array(old('type'), ['owner_payment', 'project_expense'], true) ? 'Select project' : 'Optional'"
+                            empty-label="Select project"
                             :allow-empty="true"
                             placeholder="Search project…"
                             class="mt-1"
                         />
                     </div>
-                    <div x-show="['worker_advance','worker_settlement','other_income','other_expense'].includes(type)" x-cloak>
+
+                    <div x-show="needsWorker" x-cloak class="relative z-30">
                         <x-input-label for="manual_worker" value="Worker" />
                         <x-searchable-select
                             name="worker_id"
-                            :options="$workers->map(fn ($w) => ['value' => (string) $w->id, 'label' => $w->name, 'search' => $w->name])->values()"
+                            :options="$workerOptions"
                             :value="(string) old('worker_id')"
-                            :empty-label="str_starts_with(old('type', ''), 'worker') ? 'Select worker' : 'Optional'"
+                            empty-label="Select worker"
                             :allow-empty="true"
                             placeholder="Search worker…"
                             class="mt-1"
                         />
                     </div>
-                    <div x-show="type === 'project_expense'" x-cloak>
+
+                    <div x-show="type === 'project_expense'" x-cloak class="relative z-30">
                         <x-input-label for="expense_category" value="Expense category" />
                         <x-searchable-select
                             name="expense_category"
-                            :options="collect($expenseCategories)->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()])->values()"
+                            :options="$expenseCategoryOptions"
                             :value="(string) old('expense_category')"
                             empty-label="Category"
                             :allow-empty="true"
@@ -418,7 +452,8 @@
                             class="mt-1"
                         />
                     </div>
-                    <div x-show="type === 'other_income' || type === 'other_expense'" x-cloak>
+
+                    <div x-show="type === 'other_income' || type === 'other_expense'" x-cloak class="relative z-30">
                         <x-input-label for="manual_category" value="Category" />
                         <x-searchable-select
                             name="category"
@@ -435,15 +470,17 @@
                             class="mt-1"
                         />
                     </div>
-                    <div x-show="type !== 'purchase'">
+
+                    <div x-show="type !== 'purchase'" x-cloak>
                         <x-input-label for="manual_amount" value="Amount (Rs.)" />
                         <x-text-input id="manual_amount" name="amount" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('amount')" />
                     </div>
-                    <div>
+
+                    <div class="relative z-30">
                         <x-input-label for="manual_method" value="Method" />
                         <x-searchable-select
                             name="method"
-                            :options="collect($methods)->map(fn ($m) => ['value' => $m->value, 'label' => $m->label()])->values()"
+                            :options="$methodOptions"
                             :value="(string) old('method', collect($methods)->first()?->value ?? 'cash')"
                             empty-label="Select method"
                             :allow-empty="false"
@@ -451,20 +488,24 @@
                             class="mt-1"
                         />
                     </div>
+
                     <div>
                         <x-input-label for="manual_reference" value="Receipt / reference" />
                         <x-text-input id="manual_reference" name="reference_no" class="mt-1 block w-full" :value="old('reference_no')" placeholder="Slip / voucher" />
                     </div>
+
                     <div x-show="type === 'worker_advance'" x-cloak class="sm:col-span-2">
                         <label class="inline-flex items-center gap-2 text-sm">
                             <input type="checkbox" name="deduct_from_week" value="1" class="rounded border-gray-300" @checked(old('deduct_from_week'))>
                             Deduct this advance from the current week salary
                         </label>
                     </div>
+
                     <div x-show="type === 'worker_settlement'" x-cloak>
                         <x-input-label for="debt_deducted" value="Recover worker debt (Rs.)" />
                         <x-text-input id="debt_deducted" name="debt_deducted" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('debt_deducted', 0)" />
                     </div>
+
                     <div class="sm:col-span-2">
                         <x-input-label for="manual_description" value="Notes" />
                         <x-text-input id="manual_description" name="description" class="mt-1 block w-full" :value="old('description')" placeholder="Optional except for other income, other expense, and site expense" />
@@ -472,6 +513,23 @@
                 </div>
                 <x-primary-button>Record in Daily Accounts</x-primary-button>
             </form>
+
+            @push('scripts')
+                <script>
+                    function dailyRecordForm(initialType) {
+                        return {
+                            type: initialType || 'owner_payment',
+                            typeOptions: @json($typeOptions),
+                            get needsProject() {
+                                return ['owner_payment', 'project_expense', 'worker_advance', 'worker_settlement'].includes(this.type);
+                            },
+                            get needsWorker() {
+                                return ['worker_advance', 'worker_settlement', 'other_income', 'other_expense'].includes(this.type);
+                            },
+                        };
+                    }
+                </script>
+            @endpush
             @else
             <div class="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
                 @if ($day->isClosed())

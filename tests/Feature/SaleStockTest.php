@@ -211,7 +211,9 @@ class SaleStockTest extends TestCase
             ->get(route('store.sales.pos'))
             ->assertOk()
             ->assertSee('Barcode / SKU')
-            ->assertSee('Point of Sale');
+            ->assertSee('Point of Sale')
+            ->assertSee('Exit POS')
+            ->assertDontSee('lg:static lg:inset-auto lg:flex lg:flex-col lg:shrink-0', false);
     }
 
     public function test_cash_sale_cannot_complete_without_paid_amount(): void

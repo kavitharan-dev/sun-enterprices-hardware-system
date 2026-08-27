@@ -47,7 +47,7 @@
         required: {{ $required ? 'true' : 'false' }},
         disabled: {{ $disabled ? 'true' : 'false' }},
     })"
-    class="relative"
+    class="relative z-20"
     x-on:click.outside="open = false"
     {{ $attributes }}
 >
@@ -72,7 +72,7 @@
         x-show="open"
         x-cloak
         x-transition.opacity.duration.100ms
-        class="absolute z-50 mt-1 w-full overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg"
+        class="absolute left-0 right-0 z-[200] mt-1 max-h-60 overflow-hidden rounded-md border border-slate-200 bg-white shadow-xl"
     >
         <div class="border-b border-slate-100 p-2">
             <input
