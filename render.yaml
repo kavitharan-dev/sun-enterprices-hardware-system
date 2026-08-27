@@ -43,6 +43,8 @@ services:
           property: connectionString
       - key: SESSION_DRIVER
         value: database
+      - key: SESSION_LIFETIME
+        value: "720"
       - key: SESSION_ENCRYPT
         value: "true"
       - key: CACHE_STORE
