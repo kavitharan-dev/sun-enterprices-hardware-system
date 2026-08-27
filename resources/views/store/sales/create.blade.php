@@ -8,6 +8,12 @@
         'unit' => $p->unit?->symbol,
     ])->values();
 
+    $productSelectOptions = $productOptions->map(fn ($p) => [
+        'value' => (string) $p['id'],
+        'label' => $p['sku'].' — '.$p['name'].' ('.$p['stock'].' '.($p['unit'] ?? '').')',
+        'search' => $p['sku'].' '.$p['name'],
+    ])->values();
+
     $customerOptions = $customers->map(fn ($c) => [
         'value' => (string) $c->id,
         'label' => $c->name.($c->phone ? ' · '.$c->phone : ''),
@@ -208,11 +214,7 @@
             function saleForm() {
                 return {
                     products: @json($productOptions),
-                    productSelectOptions: @json($productOptions->map(fn ($p) => [
-                        'value' => (string) $p['id'],
-                        'label' => $p['sku'].' — '.$p['name'].' ('.$p['stock'].' '.($p['unit'] ?? '').')',
-                        'search' => $p['sku'].' '.$p['name'],
-                    ])->values()),
+                    productSelectOptions: @json($productSelectOptions),
                     items: @json($existingItems),
                     customerId: @json((string) old('customer_id', $sale->customer_id ?? '')),
                     paymentMethod: @json((string) old('payment_method', 'cash')),

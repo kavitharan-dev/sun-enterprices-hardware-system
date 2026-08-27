@@ -7,6 +7,12 @@
         'unit' => $p->unit?->symbol,
     ])->values();
 
+    $productSelectOptions = $productOptions->map(fn ($p) => [
+        'value' => (string) $p['id'],
+        'label' => $p['sku'].' — '.$p['name'].' ('.$p['stock'].' '.($p['unit'] ?? '').')',
+        'search' => $p['sku'].' '.$p['name'],
+    ])->values();
+
     $projectOptions = $projects->map(fn ($p) => [
         'value' => (string) $p->id,
         'label' => $p->name.' ('.$p->project_code.')',
@@ -133,11 +139,7 @@
             function requestForm() {
                 return {
                     products: @json($productOptions),
-                    productSelectOptions: @json($productOptions->map(fn ($p) => [
-                        'value' => (string) $p['id'],
-                        'label' => $p['sku'].' — '.$p['name'].' ('.$p['stock'].' '.($p['unit'] ?? '').')',
-                        'search' => $p['sku'].' '.$p['name'],
-                    ])->values()),
+                    productSelectOptions: @json($productSelectOptions),
                     items: @json($existingItems),
                     addItem() {
                         this.items.push({ product_id: '', quantity: 1, notes: '' });

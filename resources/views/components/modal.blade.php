@@ -14,27 +14,27 @@ $maxWidth = [
 ][$maxWidth];
 @endphp
 
+{{-- Alpine callbacks use function() — not => — so HTML attribute parsing does not truncate at > --}}
 <div
     x-data="{
         show: @js($show),
-        focusables() {
-            // All focusable element types...
-            let selector = 'a, button, input:not([type=\'hidden\']), textarea, select, details, [tabindex]:not([tabindex=\'-1\'])'
-            return [...$el.querySelectorAll(selector)]
-                // All non-disabled elements...
-                .filter(el => ! el.hasAttribute('disabled'))
+        focusables: function () {
+            var selector = 'a, button, input:not([type=\'hidden\']), textarea, select, details, [tabindex]:not([tabindex=\'-1\'])';
+            return Array.prototype.slice.call($el.querySelectorAll(selector)).filter(function (el) {
+                return !el.hasAttribute('disabled');
+            });
         },
-        firstFocusable() { return this.focusables()[0] },
-        lastFocusable() { return this.focusables().slice(-1)[0] },
-        nextFocusable() { return this.focusables()[this.nextFocusableIndex()] || this.firstFocusable() },
-        prevFocusable() { return this.focusables()[this.prevFocusableIndex()] || this.lastFocusable() },
-        nextFocusableIndex() { return (this.focusables().indexOf(document.activeElement) + 1) % (this.focusables().length + 1) },
-        prevFocusableIndex() { return Math.max(0, this.focusables().indexOf(document.activeElement)) -1 },
+        firstFocusable: function () { return this.focusables()[0]; },
+        lastFocusable: function () { return this.focusables().slice(-1)[0]; },
+        nextFocusable: function () { return this.focusables()[this.nextFocusableIndex()] || this.firstFocusable(); },
+        prevFocusable: function () { return this.focusables()[this.prevFocusableIndex()] || this.lastFocusable(); },
+        nextFocusableIndex: function () { return (this.focusables().indexOf(document.activeElement) + 1) % (this.focusables().length + 1); },
+        prevFocusableIndex: function () { return Math.max(0, this.focusables().indexOf(document.activeElement)) - 1; },
     }"
-    x-init="$watch('show', value => {
+    x-init="$watch('show', function (value) {
         if (value) {
             document.body.classList.add('overflow-y-hidden');
-            {{ $attributes->has('focusable') ? 'setTimeout(() => firstFocusable().focus(), 100)' : '' }}
+            {{ $attributes->has('focusable') ? 'setTimeout(function () { firstFocusable().focus(); }, 100)' : '' }}
         } else {
             document.body.classList.remove('overflow-y-hidden');
         }

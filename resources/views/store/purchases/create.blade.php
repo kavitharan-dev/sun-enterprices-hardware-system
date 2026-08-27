@@ -7,6 +7,12 @@
         'unit' => $p->unit?->symbol,
     ])->values();
 
+    $productSelectOptions = $productOptions->map(fn ($p) => [
+        'value' => (string) $p['id'],
+        'label' => $p['sku'].' — '.$p['name'],
+        'search' => $p['sku'].' '.$p['name'],
+    ])->values();
+
     $supplierOptions = $suppliers->map(fn ($s) => [
         'value' => (string) $s->id,
         'label' => $s->name,
@@ -145,11 +151,7 @@
             function purchaseForm() {
                 return {
                     products: @json($productOptions),
-                    productSelectOptions: @json($productOptions->map(fn ($p) => [
-                        'value' => (string) $p['id'],
-                        'label' => $p['sku'].' — '.$p['name'],
-                        'search' => $p['sku'].' '.$p['name'],
-                    ])->values()),
+                    productSelectOptions: @json($productSelectOptions),
                     items: @json($existingItems),
                     discount: {{ (float) old('discount', $purchase->discount ?? 0) }},
                     tax: {{ (float) old('tax', $purchase->tax ?? 0) }},

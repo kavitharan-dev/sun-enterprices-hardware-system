@@ -27,10 +27,10 @@ class PurchaseController extends Controller
             ->with(['supplier', 'creator'])
             ->withCount('items')
             ->when($request->filled('q'), function ($query) use ($request) {
-                $term = '%'.$request->string('q').'%';
+                $term = '%'.mb_strtolower($request->string('q')->toString()).'%';
                 $query->where(function ($inner) use ($term) {
-                    $inner->where('reference_no', 'like', $term)
-                        ->orWhereHas('supplier', fn ($supplier) => $supplier->where('name', 'like', $term));
+                    $inner->whereRaw('LOWER(reference_no) LIKE ?', [$term])
+                        ->orWhereHas('supplier', fn ($supplier) => $supplier->whereRaw('LOWER(name) LIKE ?', [$term]));
                 });
             })
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
