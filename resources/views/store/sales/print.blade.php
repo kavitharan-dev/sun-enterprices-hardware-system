@@ -45,6 +45,7 @@
             <h1>INVOICE</h1>
             <div><strong>{{ $sale->invoice_no }}</strong></div>
             <div>Date: {{ $sale->sale_date->format('d/m/Y') }}</div>
+            <div>Time: {{ $sale->billedAt()->timezone(config('app.timezone'))->format('d/m/Y h:i A') }}</div>
             <div>Payment: {{ $sale->payment_status->label() }}</div>
         </div>
     </div>

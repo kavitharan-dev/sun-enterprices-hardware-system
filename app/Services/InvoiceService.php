@@ -39,9 +39,9 @@ class InvoiceService
     public function company(): array
     {
         return [
-            'name' => config('brand.name'),
+            'name' => Setting::get('company_name', config('brand.name')),
             'tagline' => config('brand.tagline'),
-            'address' => config('brand.address'),
+            'address' => Setting::get('company_address', config('brand.address')),
             'phone' => Setting::get('company_phone', config('brand.phone', '')),
             'email' => Setting::get('company_email', ''),
             'currency' => Setting::get('currency', 'Rs.'),

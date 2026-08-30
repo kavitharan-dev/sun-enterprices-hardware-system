@@ -104,4 +104,10 @@ class Sale extends Model
     {
         return (float) $this->change_amount;
     }
+
+    /** Exact time printed on bills (completion time, or now for drafts). */
+    public function billedAt(): \Illuminate\Support\Carbon
+    {
+        return $this->completed_at ?? now();
+    }
 }

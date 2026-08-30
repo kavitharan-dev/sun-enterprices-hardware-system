@@ -40,6 +40,7 @@
                 <p class="text-lg font-bold">INVOICE</p>
                 <p class="font-mono font-semibold">{{ $sale->invoice_no }}</p>
                 <p class="text-sm">Date: {{ $sale->sale_date->format('d/m/Y') }}</p>
+                <p class="text-sm">Time: {{ $sale->billedAt()->timezone(config('app.timezone'))->format('d/m/Y h:i A') }}</p>
                 <p class="text-sm">Payment: {{ $sale->payment_status->label() }}</p>
             </div>
         </div>

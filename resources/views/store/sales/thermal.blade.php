@@ -59,6 +59,7 @@
 
     <div class="row"><span>Receipt</span><span class="bold">{{ $sale->invoice_no }}</span></div>
     <div class="row"><span>Date</span><span>{{ $sale->sale_date->format('d/m/Y') }}</span></div>
+    <div class="row"><span>Time</span><span>{{ $sale->billedAt()->timezone(config('app.timezone'))->format('d/m/Y h:i A') }}</span></div>
     <div class="row"><span>Payment</span><span>{{ $sale->payment_status->label() }}</span></div>
     <div style="margin-top:4px;"><span class="muted">Bill to</span><br><span class="bold">{{ $sale->customerName() }}</span></div>
 
