@@ -4,6 +4,10 @@
 <div class="flex justify-between"><span>Subtotal</span><span>{{ $currency }} {{ number_format((float) $sale->subtotal, 2) }}</span></div>
 <div class="flex justify-between"><span>Discount</span><span>{{ $currency }} {{ number_format((float) $sale->discount, 2) }}</span></div>
 <div class="flex justify-between"><span>Tax</span><span>{{ $currency }} {{ number_format((float) $sale->tax, 2) }}</span></div>
+@if ((float) $sale->previous_balance_included > 0)
+    <div class="flex justify-between"><span>This sale</span><span>{{ $currency }} {{ number_format($sale->itemsTotal(), 2) }}</span></div>
+    <div class="flex justify-between text-amber-800"><span>Previous balance</span><span>{{ $currency }} {{ number_format((float) $sale->previous_balance_included, 2) }}</span></div>
+@endif
 <div class="flex justify-between text-base font-bold"><span>Bill total</span><span>{{ $currency }} {{ number_format((float) $sale->total, 2) }}</span></div>
 <div class="flex justify-between"><span>Customer paid</span><span>{{ $currency }} {{ number_format($sale->amountReceived(), 2) }}</span></div>
 @if ($sale->changeDue() > 0)

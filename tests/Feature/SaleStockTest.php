@@ -330,6 +330,63 @@ class SaleStockTest extends TestCase
         $this->assertSame(0, \App\Models\Sale::query()->count());
     }
 
+    public function test_previous_balance_can_be_included_and_payment_allocates_fifo(): void
+    {
+        [$user, $product] = $this->seedSaleCatalog(stock: 50);
+        $customer = Customer::query()->create(['name' => 'Registered Buyer', 'phone' => '0771111111']);
+
+        $service = app(SaleService::class);
+
+        $oldSale = $service->create([
+            'customer_id' => $customer->id,
+            'sale_date' => now()->subDays(3)->toDateString(),
+            'discount' => 0,
+            'tax' => 0,
+        ], [
+            ['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 1000],
+        ], $user->id);
+
+        $service->complete($oldSale, ['method' => 'credit'], $user->id);
+        $oldSale->refresh();
+        $customer->refresh();
+
+        $this->assertSame(1000.0, (float) $oldSale->balance);
+        $this->assertSame(1000.0, (float) $customer->outstanding_balance);
+
+        $newSale = $service->create([
+            'customer_id' => $customer->id,
+            'include_previous_balance' => true,
+            'sale_date' => now()->toDateString(),
+            'discount' => 0,
+            'tax' => 0,
+        ], [
+            ['product_id' => $product->id, 'quantity' => 2, 'unit_price' => 750],
+        ], $user->id);
+
+        $this->assertSame(1000.0, (float) $newSale->previous_balance_included);
+        $this->assertSame(2500.0, (float) $newSale->total);
+
+        $service->complete($newSale, [
+            'amount' => 2500,
+            'method' => 'cash',
+        ], $user->id);
+
+        $oldSale->refresh();
+        $newSale->refresh();
+        $customer->refresh();
+
+        $this->assertSame(0.0, (float) $oldSale->balance);
+        $this->assertSame(0.0, (float) $newSale->balance);
+        $this->assertSame(0.0, (float) $customer->outstanding_balance);
+        $this->assertSame(PaymentStatus::Paid, $newSale->payment_status);
+
+        $this->actingAs($user)
+            ->get(route('store.sales.bill', $newSale))
+            ->assertOk()
+            ->assertSee('Previous balance')
+            ->assertSee('2,500.00');
+    }
+
     /**
      * @return array{0: User, 1: Product}
      */

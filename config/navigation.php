@@ -76,6 +76,13 @@ return [
         'roles' => ['admin', 'store_manager', 'cashier'],
     ],
     [
+        'label' => 'Tools & Vehicles',
+        'route' => 'store.assets.index',
+        'active' => 'store.assets.*',
+        'icon' => 'truck',
+        'roles' => ['admin', 'store_manager', 'cashier'],
+    ],
+    [
         'label' => 'Construction',
         'type' => 'heading',
         'roles' => ['admin', 'site_manager'],

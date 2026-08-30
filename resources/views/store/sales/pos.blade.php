@@ -12,6 +12,7 @@
         'id' => (string) $c->id,
         'name' => $c->name,
         'phone' => $c->phone,
+        'outstanding' => (float) $c->outstanding_balance,
     ])->values();
 @endphp
 
@@ -183,6 +184,21 @@
                             </div>
                         </div>
                         <p x-show="customerId" x-cloak class="mt-1 text-sm font-medium text-emerald-800" x-text="selectedCustomerLabel"></p>
+                        <div x-show="customerId && customerPreviousDue > 0" x-cloak class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                            <p class="text-sm font-semibold text-amber-950">
+                                Previous due: Rs. <span x-text="customerPreviousDue.toFixed(2)"></span>
+                            </p>
+                            <label class="mt-2 flex cursor-pointer items-start gap-2 text-sm text-amber-950">
+                                <input
+                                    type="checkbox"
+                                    name="include_previous_balance"
+                                    value="1"
+                                    x-model="includePreviousBalance"
+                                    class="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+                                >
+                                <span>Add previous balance to this bill</span>
+                            </label>
+                        </div>
                         <div x-show="!customerId" x-cloak class="mt-2">
                             <input
                                 type="text"
@@ -207,6 +223,12 @@
 
                     <div class="rounded-2xl bg-gradient-to-br from-walnut-900 to-walnut-800 px-4 py-4 text-white shadow-inner">
                         <p class="text-xs font-semibold uppercase tracking-wider text-amber-200/80">Bill total</p>
+                        <template x-if="includePreviousBalance && customerPreviousDue > 0">
+                            <div class="mt-2 space-y-1 text-sm text-white/80">
+                                <div class="flex justify-between"><span>This sale</span><span x-text="'Rs. ' + saleTotal().toFixed(2)"></span></div>
+                                <div class="flex justify-between"><span>Previous balance</span><span x-text="'Rs. ' + customerPreviousDue.toFixed(2)"></span></div>
+                            </div>
+                        </template>
                         <p class="mt-1 text-4xl font-bold tabular-nums tracking-tight" x-text="'Rs. ' + grandTotal().toFixed(2)"></p>
                         <p class="mt-1 text-xs text-white/60" x-text="items.length + ' item(s)'"></p>
                     </div>
@@ -287,6 +309,7 @@
                     items: [],
                     customerId: @json((string) old('customer_id', '')),
                     walkInName: @json((string) old('walk_in_name', '')),
+                    includePreviousBalance: @json((bool) old('include_previous_balance', false)),
                     customerQuery: '',
                     customerOpen: false,
                     customerBrowsing: false,
@@ -340,6 +363,10 @@
                         const c = this.customers.find((x) => String(x.id) === String(this.customerId));
                         return c ? (c.name + (c.phone ? ' · ' + c.phone : '')) : '';
                     },
+                    get customerPreviousDue() {
+                        const c = this.customers.find((x) => String(x.id) === String(this.customerId));
+                        return c ? (Number(c.outstanding) || 0) : 0;
+                    },
                     openCustomerList() {
                         this.customerOpen = true;
                         this.customerBrowsing = true;
@@ -367,11 +394,13 @@
                         this.walkInName = '';
                         this.customerBrowsing = false;
                         this.customerOpen = false;
+                        this.includePreviousBalance = false;
                     },
                     clearCustomer() {
                         this.customerId = '';
                         this.customerQuery = '';
                         this.customerBrowsing = false;
+                        this.includePreviousBalance = false;
                     },
                     prepareSubmit(e) {
                         if (this.items.length === 0) {
@@ -383,6 +412,12 @@
                         }
                         if (! this.customerId && ! String(this.walkInName || '').trim()) {
                             this.walkInName = 'Walk-in Customer';
+                        }
+                        if (this.includePreviousBalance && this.customerPreviousDue > 0) {
+                            const message = 'Add previous balance of Rs. ' + this.customerPreviousDue.toFixed(2) + ' to this bill?';
+                            if (! window.confirm(message)) {
+                                e.preventDefault();
+                            }
                         }
                     },
                     findProduct(code) {
@@ -430,9 +465,16 @@
                     lineTotal(item) {
                         return Math.max(0, ((Number(item.quantity) || 0) * (Number(item.unit_price) || 0)) - (Number(item.discount) || 0));
                     },
-                    grandTotal() {
+                    saleTotal() {
                         const subtotal = this.items.reduce((sum, item) => sum + this.lineTotal(item), 0);
                         return Math.max(0, subtotal - (Number(this.discount) || 0) + (Number(this.tax) || 0));
+                    },
+                    grandTotal() {
+                        const total = this.saleTotal();
+                        if (this.includePreviousBalance && this.customerPreviousDue > 0) {
+                            return total + this.customerPreviousDue;
+                        }
+                        return total;
                     },
                     changeDue() {
                         return Math.max(0, (Number(this.tendered) || 0) - this.grandTotal());

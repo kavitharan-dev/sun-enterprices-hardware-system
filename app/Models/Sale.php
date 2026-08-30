@@ -23,6 +23,7 @@ class Sale extends Model
         'discount',
         'tax',
         'total',
+        'previous_balance_included',
         'paid_amount',
         'tendered_amount',
         'change_amount',
@@ -42,6 +43,7 @@ class Sale extends Model
             'discount' => 'decimal:2',
             'tax' => 'decimal:2',
             'total' => 'decimal:2',
+            'previous_balance_included' => 'decimal:2',
             'paid_amount' => 'decimal:2',
             'tendered_amount' => 'decimal:2',
             'change_amount' => 'decimal:2',
@@ -109,5 +111,10 @@ class Sale extends Model
     public function billedAt(): \Illuminate\Support\Carbon
     {
         return $this->completed_at ?? now();
+    }
+
+    public function itemsTotal(): float
+    {
+        return round((float) $this->subtotal - (float) $this->discount + (float) $this->tax, 2);
     }
 }

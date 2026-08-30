@@ -6,6 +6,7 @@ use App\Enums\MovementType;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\SaleStatus;
+use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Sale;
@@ -28,6 +29,8 @@ class SaleService
     {
         return DB::transaction(function () use ($data, $items, $userId) {
             $totals = $this->calculateTotals($items, $data['discount'] ?? 0, $data['tax'] ?? 0);
+            $previousIncluded = $this->resolvePreviousBalanceIncluded($data);
+            $total = round($totals['total'] + $previousIncluded, 2);
 
             $sale = Sale::query()->create([
                 'customer_id' => ($data['customer_id'] ?? null) ?: null,
@@ -36,9 +39,10 @@ class SaleService
                 'subtotal' => $totals['subtotal'],
                 'discount' => $totals['discount'],
                 'tax' => $totals['tax'],
-                'total' => $totals['total'],
+                'total' => $total,
+                'previous_balance_included' => $previousIncluded,
                 'paid_amount' => 0,
-                'balance' => $totals['total'],
+                'balance' => $total,
                 'payment_status' => PaymentStatus::Unpaid,
                 'status' => SaleStatus::Draft,
                 'notes' => $data['notes'] ?? null,
@@ -61,6 +65,8 @@ class SaleService
 
         return DB::transaction(function () use ($sale, $data, $items) {
             $totals = $this->calculateTotals($items, $data['discount'] ?? 0, $data['tax'] ?? 0);
+            $previousIncluded = $this->resolvePreviousBalanceIncluded($data, $sale);
+            $total = round($totals['total'] + $previousIncluded, 2);
 
             $sale->update([
                 'customer_id' => ($data['customer_id'] ?? null) ?: null,
@@ -69,8 +75,9 @@ class SaleService
                 'subtotal' => $totals['subtotal'],
                 'discount' => $totals['discount'],
                 'tax' => $totals['tax'],
-                'total' => $totals['total'],
-                'balance' => $totals['total'],
+                'total' => $total,
+                'previous_balance_included' => $previousIncluded,
+                'balance' => $total,
                 'notes' => $data['notes'] ?? null,
             ]);
 
@@ -146,13 +153,20 @@ class SaleService
             ]);
 
             if ($applied > 0) {
-                $this->applyPayment($sale, [
+                $paymentData = [
                     'amount' => $applied,
                     'payment_method' => $method->value,
                     'payment_date' => $payment['payment_date'] ?? $sale->sale_date,
                     'reference' => $payment['reference'] ?? null,
                     'notes' => $payment['notes'] ?? null,
-                ], $userId ?? auth()->id(), notify: false);
+                ];
+
+                if ($sale->customer_id && (float) $sale->previous_balance_included > 0) {
+                    $allocatedToOlder = $this->allocateCustomerPayment($sale, $paymentData, $applied, $userId ?? auth()->id(), notify: false);
+                    $this->refreshPaymentState($sale, $allocatedToOlder);
+                } else {
+                    $this->applyPayment($sale, $paymentData, $userId ?? auth()->id(), notify: false);
+                }
             } else {
                 $this->refreshPaymentState($sale);
             }
@@ -235,6 +249,68 @@ class SaleService
         return compact('subtotal', 'discount', 'tax', 'total');
     }
 
+    private function resolvePreviousBalanceIncluded(array $data, ?Sale $exclude = null): float
+    {
+        if (empty($data['customer_id']) || ! $this->shouldIncludePreviousBalance($data)) {
+            return 0.0;
+        }
+
+        $customer = Customer::query()->find($data['customer_id']);
+
+        return $customer?->priorOutstanding($exclude) ?? 0.0;
+    }
+
+    private function shouldIncludePreviousBalance(array $data): bool
+    {
+        return filter_var($data['include_previous_balance'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    private function allocateCustomerPayment(Sale $sale, array $payment, float $amount, int $userId, bool $notify): float
+    {
+        $remaining = round($amount, 2);
+        $allocatedToOlder = 0.0;
+        $customer = $sale->customer;
+
+        if (! $customer) {
+            $this->applyPayment($sale, array_merge($payment, ['amount' => $remaining]), $userId, $notify);
+
+            return 0.0;
+        }
+
+        $olderSales = $customer->sales()
+            ->where('status', SaleStatus::Completed)
+            ->where('id', '!=', $sale->id)
+            ->where('balance', '>', 0)
+            ->orderBy('completed_at')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($olderSales as $olderSale) {
+            if ($remaining <= 0) {
+                break;
+            }
+
+            $portion = min((float) $olderSale->balance, $remaining);
+
+            $this->applyPayment($olderSale, [
+                'amount' => $portion,
+                'payment_method' => $payment['payment_method'],
+                'payment_date' => $payment['payment_date'] ?? now()->toDateString(),
+                'reference' => $payment['reference'] ?? null,
+                'notes' => trim('Collected via '.$sale->invoice_no.($payment['notes'] ? ' — '.$payment['notes'] : '')),
+            ], $userId, notify: false);
+
+            $allocatedToOlder = round($allocatedToOlder + $portion, 2);
+            $remaining = round($remaining - $portion, 2);
+        }
+
+        if ($remaining > 0) {
+            $this->applyPayment($sale, array_merge($payment, ['amount' => $remaining]), $userId, $notify);
+        }
+
+        return $allocatedToOlder;
+    }
+
     private function syncItems(Sale $sale, array $items): void
     {
         foreach ($items as $item) {
@@ -291,9 +367,11 @@ class SaleService
         return $record;
     }
 
-    private function refreshPaymentState(Sale $sale): void
+    private function refreshPaymentState(Sale $sale, float $priorBalanceSettled = 0.0): void
     {
-        $paid = round((float) $sale->payments()->sum('amount'), 2);
+        $paidOnSale = round((float) $sale->payments()->sum('amount'), 2);
+        $priorSettled = round(min($priorBalanceSettled, (float) $sale->previous_balance_included), 2);
+        $paid = round($paidOnSale + $priorSettled, 2);
         $total = (float) $sale->total;
         $balance = round(max($total - $paid, 0), 2);
 

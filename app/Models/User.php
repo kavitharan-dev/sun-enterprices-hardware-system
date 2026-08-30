@@ -123,6 +123,16 @@ class User extends Authenticatable
         return $this->hasAnyRole(['admin', 'store_manager', 'cashier']);
     }
 
+    public function canManageStoreAssets(): bool
+    {
+        return $this->hasAnyRole(['admin', 'store_manager']);
+    }
+
+    public function canViewStoreAssets(): bool
+    {
+        return $this->canManageStore();
+    }
+
     public function canViewConstructionReports(): bool
     {
         return $this->hasAnyRole(['admin', 'site_manager']);

@@ -35,12 +35,20 @@ class SaleRequest extends FormRequest
             'items.*.discount' => ['nullable', 'numeric', 'min:0'],
             'payment_amount' => ['nullable', 'numeric', 'min:0'],
             'payment_method' => ['nullable', 'in:cash,card,bank_transfer,credit'],
+            'include_previous_balance' => ['nullable', 'boolean'],
         ];
     }
 
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
+            if ($this->boolean('include_previous_balance') && ! $this->filled('customer_id')) {
+                $validator->errors()->add(
+                    'include_previous_balance',
+                    'Select a registered customer to include their previous balance.',
+                );
+            }
+
             if (! $this->boolean('complete') || ! $this->user()?->canConfirmTill()) {
                 return;
             }

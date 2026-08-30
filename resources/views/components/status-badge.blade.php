@@ -26,6 +26,9 @@
         'issued' => 'bg-emerald-100 text-emerald-800',
         'planning' => 'bg-slate-100 text-slate-700',
         'on_hold' => 'bg-amber-100 text-amber-800',
+        'out' => 'bg-amber-100 text-amber-800',
+        'available' => 'bg-emerald-100 text-emerald-800',
+        'returned' => 'bg-slate-100 text-slate-700',
     ];
     $key = $status instanceof \BackedEnum
         ? $status->value

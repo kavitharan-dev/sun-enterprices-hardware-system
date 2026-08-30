@@ -87,6 +87,10 @@
         @if ((float) $sale->tax > 0)
             <tr><td>Tax</td><td class="right">{{ number_format((float) $sale->tax, 2) }}</td></tr>
         @endif
+        @if ((float) $sale->previous_balance_included > 0)
+            <tr><td>This sale</td><td class="right">{{ number_format($sale->itemsTotal(), 2) }}</td></tr>
+            <tr><td>Previous balance</td><td class="right">{{ number_format((float) $sale->previous_balance_included, 2) }}</td></tr>
+        @endif
         <tr><td class="bold">TOTAL</td><td class="right bold">{{ $company['currency'] }} {{ number_format((float) $sale->total, 2) }}</td></tr>
         <tr><td>Paid</td><td class="right">{{ number_format($sale->amountReceived(), 2) }}</td></tr>
         @if ($sale->changeDue() > 0)

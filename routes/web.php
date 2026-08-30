@@ -25,6 +25,7 @@ use App\Http\Controllers\Store\MaterialRequestReviewController;
 use App\Http\Controllers\Store\ProductController;
 use App\Http\Controllers\Store\PurchaseController;
 use App\Http\Controllers\Store\SaleController;
+use App\Http\Controllers\Store\StoreAssetController;
 use App\Http\Controllers\Store\SupplierController;
 use App\Http\Controllers\Store\UnitController;
 use Illuminate\Support\Facades\Route;
@@ -94,6 +95,10 @@ Route::middleware(['auth', 'role:admin|store_manager|cashier'])->prefix('store')
     Route::post('material-requests/{materialRequest}/issue', [MaterialIssueController::class, 'store'])->name('material-requests.issue');
     Route::get('material-issues', [MaterialIssueController::class, 'index'])->name('material-issues.index');
     Route::get('material-issues/{materialIssue}', [MaterialIssueController::class, 'show'])->name('material-issues.show');
+
+    Route::resource('assets', StoreAssetController::class);
+    Route::post('assets/{asset}/issue', [StoreAssetController::class, 'issue'])->name('assets.issue');
+    Route::post('asset-assignments/{assignment}/return', [StoreAssetController::class, 'returnAsset'])->name('asset-assignments.return');
 });
 
 Route::middleware(['auth', 'role:admin|store_manager|cashier'])->prefix('store')->name('store.')->group(function () {
