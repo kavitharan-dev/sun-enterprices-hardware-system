@@ -27,6 +27,17 @@ class PageSmokeTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_store_manager_dashboard_shows_tools_and_vehicles_link(): void
+    {
+        $user = $this->userWithRole('store_manager');
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Tools &amp; vehicles', false)
+            ->assertSee(route('store.assets.index'), false);
+    }
+
     public function test_store_manager_core_pages_return_ok(): void
     {
         $user = $this->userWithRole('store_manager');
@@ -52,6 +63,8 @@ class PageSmokeTest extends TestCase
             'store.units.index',
             'store.material-requests.index',
             'store.material-issues.index',
+            'store.assets.index',
+            'store.assets.create',
             'cashier.daily-accounts.index',
             'reports.index',
             'reports.sales',
@@ -82,6 +95,7 @@ class PageSmokeTest extends TestCase
             'store.sales.pos',
             'store.inventory.index',
             'store.products.index',
+            'store.assets.index',
             'cashier.daily-accounts.index',
         ] as $route) {
             $this->actingAs($user)

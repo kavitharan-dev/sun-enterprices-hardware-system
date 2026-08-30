@@ -44,6 +44,7 @@ if [ "$USER_COUNT" = "0" ]; then
 fi
 
 echo "Caching..."
+php artisan optimize:clear || true
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache

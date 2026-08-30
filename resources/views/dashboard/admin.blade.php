@@ -28,6 +28,16 @@
     </div>
 
     <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-900">Tools &amp; vehicles</h2>
+                <p class="mt-1 text-sm text-slate-500">{{ number_format($assetsOutNow ?? 0) }} asset(s) currently out with workers.</p>
+            </div>
+            <a href="{{ route('store.assets.index') }}" class="btn btn-primary btn-sm">Open tracking</a>
+        </div>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex items-center justify-between">
             <h2 class="text-lg font-semibold text-slate-900">Low stock alerts</h2>
             <a href="{{ route('store.inventory.index', ['low_stock' => 1]) }}" class="btn btn-secondary btn-sm">View inventory</a>

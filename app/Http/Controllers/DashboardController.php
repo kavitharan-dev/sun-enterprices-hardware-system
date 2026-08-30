@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\Project;
 use App\Models\ProjectExpense;
 use App\Models\Sale;
+use App\Models\StoreAssetAssignment;
 use App\Models\Supplier;
 use App\Services\ReportService;
 use Illuminate\Support\Facades\Schema;
@@ -79,6 +80,10 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
 
+        $assetsOutNow = Schema::hasTable('store_asset_assignments')
+            ? StoreAssetAssignment::query()->whereNull('returned_at')->count()
+            : 0;
+
         if ($user->hasRole('site_manager')) {
             $assignedProjects = Project::query()
                 ->visibleTo($user)
@@ -91,9 +96,9 @@ class DashboardController extends Controller
         }
 
         if ($user->hasRole('cashier') || $user->hasRole('store_manager')) {
-            return view('dashboard.cashier', compact('stats', 'lowStock', 'salesTrend'));
+            return view('dashboard.cashier', compact('stats', 'lowStock', 'salesTrend', 'assetsOutNow'));
         }
 
-        return view('dashboard.admin', compact('stats', 'lowStock', 'salesTrend', 'recentSales'));
+        return view('dashboard.admin', compact('stats', 'lowStock', 'salesTrend', 'recentSales', 'assetsOutNow'));
     }
 }

@@ -80,6 +80,16 @@
         <x-stat-card label="Outstanding Payments" :value="$currency . number_format($stats['outstanding_payments'], 2)" color="rose" />
     </div>
 
+    <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-semibold text-amber-950">Tools &amp; vehicles</h2>
+                <p class="mt-1 text-sm text-amber-900/80">{{ number_format($assetsOutNow ?? 0) }} asset(s) out now. Register tools, tractors, and lorries; issue to workers and mark returns.</p>
+            </div>
+            <a href="{{ route('store.assets.index') }}" class="btn btn-primary">Open tracking</a>
+        </div>
+    </div>
+
     <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-wrap gap-3">
             <a href="{{ route('store.sales.pos') }}" class="btn btn-success">Open POS</a>
@@ -89,6 +99,7 @@
             <a href="{{ route('store.purchases.create') }}" class="btn btn-secondary">New purchase</a>
             <a href="{{ route('cashier.daily-accounts.index') }}" class="btn btn-secondary">Daily accounts</a>
             <a href="{{ route('store.customers.index') }}" class="btn btn-secondary">Customers</a>
+            <a href="{{ route('store.assets.index') }}" class="btn btn-secondary">Tools &amp; vehicles</a>
         </div>
     </div>
 

@@ -41,6 +41,13 @@ return [
         'roles' => ['admin', 'store_manager', 'cashier'],
     ],
     [
+        'label' => 'Tools & Vehicles',
+        'route' => 'store.assets.index',
+        'active' => 'store.assets.*',
+        'icon' => 'wrench',
+        'roles' => ['admin', 'store_manager', 'cashier'],
+    ],
+    [
         'label' => 'POS',
         'route' => 'store.sales.pos',
         'active' => 'store.sales.pos',
@@ -73,13 +80,6 @@ return [
         'route' => 'store.material-requests.index',
         'active' => ['store.material-requests.*', 'store.material-issues.*'],
         'icon' => 'clipboard',
-        'roles' => ['admin', 'store_manager', 'cashier'],
-    ],
-    [
-        'label' => 'Tools & Vehicles',
-        'route' => 'store.assets.index',
-        'active' => 'store.assets.*',
-        'icon' => 'truck',
         'roles' => ['admin', 'store_manager', 'cashier'],
     ],
     [
